@@ -143,6 +143,8 @@ class finite_field_element(polynomial_element):
     def is_zero(self):
         return self.as_poly().is_zero()
 
+    def is_one(self):
+        return self == finite_field_element.one(self.p,self.n)
 
     def __init__(self,*args, **kwargs):
         if len(args)==3:
@@ -201,16 +203,37 @@ class finite_field_element(polynomial_element):
             cur_sum += self.coordinates[i]*self.p**i
         return cur_sum
 
+    def order(self):
+        if self.is_one():
+            return 1
+
+        x = self.copy()
+        x = self * x
+        count = 2
+        while not x == self:
+            x = x*self
+            count += 1
+        return count
     @classmethod
     def list_elements(cls,prime, power):
-        return ( (finite_field_element(l,prime,power) for l in itertools.product(range(prime) ,repeat = power) ) )
+        return ( (finite_field_element(l,prime,power) for l in itertools.product(range(prime), repeat = power) ) )
 
+    @classmethod
+    def list_nonzero_elements(cls,prime, power):
+        return ( (finite_field_element(l,prime,power) for l in itertools.product(range(prime), repeat = power) if not finite_field_element(l,prime,power).is_zero() ) )
     @classmethod
     def one(cls, p, n):
         return (finite_field_element([1 if i == 0 else 0 for i in range(n)], p, n))
     @classmethod
     def zero(cls, p, n):
         return (finite_field_element([0]*n, p, n))
+
+    @classmethod
+    def generator(cls,p,n):
+        #returns a generator.
+        for x in finite_field_element.list_elements(p,n):
+            if x.order() == p**n:
+                return x
 
 def test_finite_fields():
     #Tests inverses, associativity of addition, distributivity, commutativity.
@@ -226,12 +249,13 @@ def test_finite_fields():
                 assert e1*e2 == e2*e1
         lister = finite_field_element.list_elements(prime,power)
         for e1, e2, e3 in itertools.product(lister, repeat = 3):
-            print(e1,e2,e3)
             assert (e1+e2)+e3==e1+(e2+e3)
             assert (e1+e2)*e3==e1*e3 + e2*e3
 
 #test_finite_fields()
 
+finite_field_element.load_conway_polynomials()
+#print (finite_field_element.generator(5,1))
 # def test_division():
 #
 #     primes = [3,5,7]
@@ -248,7 +272,6 @@ def test_finite_fields():
 #                     print("good")
 
 #test_division()
-finite_field_element.load_conway_polynomials()
 # print(finite_field_element.conway_polynomial[(5,2)])
 #x = finite_field_element([1,1,1],3,3)
 #y = finite_field_element([1,2,0],3,3)
