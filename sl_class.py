@@ -32,17 +32,18 @@ class sl_matrix(object):
         assert self.p == other.p
         assert self.n == other.n
         m1 = self.matrix
-        m2 = other.matrix
         if isinstance(other,sl_matrix):
+            m2 = other.matrix
             entry00 = m1[0][0]*m2[0][0] + m1[0][1]*m2[1][0]
             entry01 = m1[0][0]*m2[0][1] + m1[0][1]*m2[1][1]
             entry10 = m1[1][0]*m2[0][0] + m1[1][1]*m2[1][0]
             entry11 = m1[1][0]*m2[0][1] + m1[1][1]*m2[1][1]
             return sl_matrix([[entry00, entry01],[entry10, entry11]])
         elif isinstance(other,point_of_plane):
+
             x, y = other.x, other.y
-            xp = m1[0][0]*x + m[0][1]*y
-            yp = m[1][0]*x + m[1][1]*y
+            xp = m1[0][0]*x + m1[0][1]*y
+            yp = m1[1][0]*x + m1[1][1]*y
             return (point_of_plane( (xp, yp) ))
         elif isinstance(other,line_of_plane):
             pass
@@ -64,6 +65,16 @@ class sl_matrix(object):
             copy = self*copy
             count +=1
         return count
+
+    def orbit(self,pt):
+        def orbit_to_create(self,pt):
+            to_yield = point_of_plane(pt.coordinates)
+            yield to_yield
+            to_yield = self*to_yield
+            while to_yield != pt:
+                yield to_yield
+                to_yield = self*to_yield
+        return orbit_to_create(self,pt)
 
     @classmethod
     def identity(cls, p, n):
@@ -114,9 +125,16 @@ def test_gen_sl():
                 print(M)
     print("All done")
 
-def test_gen_with_order():
-    S = sl_matrix.gen_with_order(5,1)
-    for s in S:
-        print(S)
-test_gen_with_order()
+def test_gen_with_order(p,n):
+    S = sl_matrix.gen_with_order(p,n)
+    one = finite_field_element.one(p,n)
+    s=next(S)
+    print ("ss")
+    R = s.orbit(point_of_plane((one,one)))
+    for r in R:
+        print (r)
+
+#test_gen_with_order(5,2)
+
+#test_gen_with_order()
 #test_gen_sl()

@@ -216,11 +216,11 @@ class finite_field_element(polynomial_element):
         return count
     @classmethod
     def list_elements(cls,prime, power):
-        return ( (finite_field_element(l,prime,power) for l in itertools.product(range(prime), repeat = power) ) )
+        return ( (finite_field_element(list(reversed(l)),prime,power) for l in itertools.product(range(prime), repeat = power) ) )
 
     @classmethod
     def list_nonzero_elements(cls,prime, power):
-        return ( (finite_field_element(l,prime,power) for l in itertools.product(range(prime), repeat = power) if not finite_field_element(l,prime,power).is_zero() ) )
+        return ( (finite_field_element(list(reversed(l)),prime,power) for l in itertools.product(range(prime), repeat = power) if not finite_field_element(l,prime,power).is_zero() ) )
     @classmethod
     def one(cls, p, n):
         return (finite_field_element([1 if i == 0 else 0 for i in range(n)], p, n))
