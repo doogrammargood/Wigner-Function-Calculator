@@ -1,2 +1,4 @@
 minesweeper/
 *.pyc
+*.ui
+

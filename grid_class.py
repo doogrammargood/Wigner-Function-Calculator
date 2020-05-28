@@ -34,4 +34,4 @@ def test_grid():
     origin = point_of_plane((zero,zero))
     for l in origin.gen_lines():
         print(G.marginalize_grid(l))
-test_grid()
+#test_grid()

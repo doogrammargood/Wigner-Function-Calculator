@@ -80,6 +80,9 @@ def random_pure_state(p,n):
     #print (vector)
     return np.matmul(vector.H,vector)
 
+def zero_state(p,n):
+    vector = np.matrix([1.0 if i ==0 else 0 for i in range(p**n)])
+    return np.matmul(vector.H,vector)
 
 def test_functions():
     p,n = 5,1

@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 #from sl_class import *
 from wigner_function import *
-
+from grid_class import *
 IMG_FLAG = QImage("./images/flag.png")
 
 def find_color(value, min, max):
@@ -35,7 +35,7 @@ class Pos(QWidget):
     clicked = pyqtSignal(point_of_plane)
 
     def __init__(self, pt, *args, **kwargs):
-        super(Pos, self).__init__(*args, **kwargs)
+        super(QWidget, self).__init__(*args, **kwargs)
 
         self.setFixedSize(QSize(20, 20))
         self.is_flagged = False# flagged points are the ones that have been clicked
@@ -90,18 +90,16 @@ class Pos(QWidget):
 
     def wig_function(self, mat):
         self.value = discrete_wig_fuct(self.pt,mat)
-        if self.pt.x.is_zero():
-            print(self.value)
         self.update()
 
 
-class MainWindow(QMainWindow):
+class WignerWidget(QWidget):
     def __init__(self, *args, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
+        super(QWidget, self).__init__(*args, **kwargs)
         self.flagged_pos=[]
         self.marked_pos=[]
         #self.b_size=25
-        w = QWidget()
+        #w = QWidget()
         hb = QHBoxLayout()
 
 
@@ -109,15 +107,21 @@ class MainWindow(QMainWindow):
         vb.addLayout(hb)
 
         self.grid = QGridLayout()
-        self.grid.setSpacing(5)
+        self.grid.setSpacing(2)
 
         vb.addLayout(self.grid)
-        w.setLayout(vb)
-        self.setCentralWidget(w)
+        self.setLayout(vb)
+        #w.setLayout(vb)
+        #self.setCentralWidget(w)
 
-        self.p=5
+        self.p=7
         self.n=2
         self.init_map(self.p,self.n)
+
+        #matrix = zero_state(self.p, self.n)
+        matrix = random_pure_state(self.p, self.n)
+        grid = grid_element(matrix,self.p, self.n)
+        self.set_values_from_grid(grid)
         self.show()
 
     def init_map(self,p,n):
@@ -170,6 +174,13 @@ class MainWindow(QMainWindow):
                 w = self.grid.itemAtPosition(x,y).widget()
                 w.wig_function(matrix)
 
+    def set_values_from_grid(self, grid):
+        p,n = self.p, self.n
+        for x in finite_field_element.list_elements(p,n):
+            for y in finite_field_element.list_elements(p,n):
+                w = self.grid.itemAtPosition(int(x),int(y)).widget()
+                w.value = grid.get_value(point_of_plane((x,y)))
+
     def values(self):
         #prints a list of lists for the values of points.
         to_return = []
@@ -181,13 +192,26 @@ class MainWindow(QMainWindow):
                 row.append(w.value)
             to_return.append(row)
         return to_return
-if __name__ == '__main__':
-    app = QApplication([])
-    window = MainWindow()
-    one = finite_field_element.one(window.p,window.n)
-    pt = point_of_plane((one,one))
-    #window.set_flags_sl(pt)
-    matrix = random_pure_state(window.p, window.n)
-    window.wig_function(matrix)
-    print(window.values())
-    app.exec_()
+
+    # def paintEvent(self, event):
+    #     p, n = self.p, self.n
+    #     for x in range(p**n):
+    #         for y in range(p**n):
+    #             w = self.grid.itemAtPosition(x,y).widget()
+    #             w.paint_event(event)
+        # p = QPainter(self)
+        # p.setRenderHint(QPainter.Antialiasing)
+        #
+        # r = event.rect()
+        # p.drawPixmap(r, QPixmap(IMG_FLAG))
+
+# if __name__ == '__main__':
+#     app = QApplication([])
+#     window = MainWindow()
+#     one = finite_field_element.one(window.p,window.n)
+#     pt = point_of_plane((one,one))
+#     #window.set_flags_sl(pt)
+#     matrix = random_pure_state(window.p, window.n)
+#     window.wig_function(matrix)
+#     #print(window.values())
+#     app.exec_()

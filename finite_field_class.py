@@ -183,6 +183,9 @@ class finite_field_element(polynomial_element):
 
         r, s, t = self.as_poly().euclidean_algorithm(finite_field_element.conway_polynomial[(self.p,self.n)])
         #r = finite_field_element(r.coordinates,self.p, self.n)
+        print (self.coordinates)
+        print (r,s,t)
+        print (finite_field_element.conway_polynomial[(self.p,self.n)])
         assert r.degree()==0
         assert not r.is_zero()
         x = r.coordinates[0]
