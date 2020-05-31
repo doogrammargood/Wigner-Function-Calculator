@@ -9,6 +9,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from main import *
 class Ui_MainWindow(object):
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1020, 689)
@@ -31,14 +32,15 @@ class Ui_MainWindow(object):
         self.wigner_grid_frame.setObjectName("wigner_grid_frame")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.wigner_grid_frame)
         #self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(-1, -1, 491, 581))
+
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         #self.widget = QtWidgets.QWidget(self.verticalLayoutWidget_2)
+        self.widget = WignerWidget(self.verticalLayoutWidget_2,p=MainWindow.p, n=MainWindow.n, grid = MainWindow.grid)
 
-        self.widget = WignerWidget(self.verticalLayoutWidget_2)
-        self.widget.setObjectName("widget")
+        self.widget.setObjectName("wignerWidget")
         self.verticalLayout_3.addWidget(self.widget)
         self.verticalLayoutWidget_2.raise_()
         self.gridLayout_2.addWidget(self.wigner_grid_frame, 0, 0, 2, 1)
@@ -46,6 +48,13 @@ class Ui_MainWindow(object):
         self.local_view_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.local_view_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.local_view_frame.setObjectName("local_view_frame")
+
+        self.local_view_layout = QVBoxLayout(self.local_view_frame)
+        self.local_view_widget = LocalView()
+        self.local_view_layout.addWidget(self.local_view_widget)
+
+        #self.gridLayout_2.addWidget(self.local_view_widget)
+        self.local_view_widget.setObjectName("local_view_widget")
         self.gridLayout_2.addWidget(self.local_view_frame, 0, 1, 1, 1)
         self.frame = QtWidgets.QFrame(self.tab)
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -57,9 +66,9 @@ class Ui_MainWindow(object):
         self.verticalLayout.setContentsMargins(-1, 15, -1, 15)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.line_tot_label = QtWidgets.QLabel(self.frame)
-        self.line_tot_label.setObjectName("line_tot_label")
-        self.verticalLayout.addWidget(self.line_tot_label)
+        self.most_neg_pt = QtWidgets.QLabel(self.frame)
+        self.most_neg_pt.setObjectName("most_neg_pt")
+        self.verticalLayout.addWidget(self.most_neg_pt)
         self.tot_neg_label = QtWidgets.QLabel(self.frame)
         self.tot_neg_label.setObjectName("tot_neg_label")
         self.verticalLayout.addWidget(self.tot_neg_label)
@@ -115,7 +124,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Wigner Function Calculator"))
-        self.line_tot_label.setText(_translate("MainWindow", "Total Along Line:"))
+        self.most_neg_pt.setText(_translate("MainWindow", "Most Negative Point: "))
         self.tot_neg_label.setText(_translate("MainWindow", "Total Negativity:"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Wigner Function"))
         self.button_random.setText(_translate("MainWindow", "random pure state"))
@@ -126,12 +135,123 @@ class Ui_MainWindow(object):
         self.menuEdit.setTitle(_translate("MainWindow", "Edit"))
         self.actionSave.setText(_translate("MainWindow", "Save"))
 
+class MyMainWindow(QMainWindow):
+    def __init__(self, *args, **kwargs):
+        super(QMainWindow, self).__init__(*args, **kwargs)
+        self.p = 3
+        self.n = 2
+        self.density_matrix = random_pure_state(self.p,self.n)
+        self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
+        self.pt1 = None
+        self.pt2 = None
+        self.pos1 = Pos(None)
+        self.pos2 = Pos(None)
+    def change_matrix(self, new_matrix):
+        self.density_matrix = random_pure_state(self.p,self.n)
+        self.grid = grid_element(self.density_matrix, self.p, self.n)
+        w = self.findChild(QWidget, "wignerWidget")
+        w.set_values_from_grid(self.grid)
+        self.set_labels()
+
+    def change_size(self, p, n):
+        self.p=p
+        self.n=n
+        self.density_matrix = random_pure_state(self.p,self.n)
+        self.grid = grid_element(self.density_matrix, self.p, self.n)
+        current = self.findChild(QWidget, "wignerWidget")
+        layout = current.parent().layout()
+        for i in reversed(range(layout.count())):
+            layout.itemAt(i).widget().setParent(None)
+        w = WignerWidget(p=self.p, n=self.n, grid =self.grid)
+        w.setObjectName("wignerWidget")
+        layout.addWidget(w)
+        w.show()
+
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.close()
+        elif e.key() == QtCore.Qt.Key_Space:
+            self.change_matrix(None)
+        elif e.key() == QtCore.Qt.Key_A:
+            self.change_size(3, 2)
+
+    def handle_click(self,pt):
+        wig = self.findChild(QWidget, "wignerWidget")
+        pos = wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+        if self.pt1 is None:
+            self.pt1 = pt
+            wig.set_flagged([self.pt1, self.pt2])
+            self.pos1.copy_data(pos)
+        elif pt == self.pt1:
+            self.pt1 = self.pt2
+            self.pt2 = None
+            wig.set_flagged([self.pt1, self.pt2])
+            self.pos1.copy_data(self.pos2)
+            self.pos2.copy_data(Pos(None))
+            self.pos1.set_unmark()
+        elif pt == self.pt2:
+            self.pt2 = None
+            wig.set_flagged([self.pt1, self.pt2])
+            self.pos2.copy_data(Pos(None))
+            self.pos1.set_unmark()
+        else:
+            self.pt2 = pt
+            wig.set_flagged([self.pt1, self.pt2])
+            self.pos2.copy_data(pos)
+            self.pos1.set_mark()
+        self.local_view_controller(pt,pos)
+
+
+    def handle_hover(self,pt):
+        wig = self.findChild(QWidget, "wignerWidget")
+        pos = wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+        if self.pt2 is None:
+            self.local_view_controller(pt,pos)
+
+    def set_labels(self):
+        tot_neg = self.findChild(QLabel, "tot_neg_label")
+        most_neg_pt = self.findChild(QLabel, "most_neg_pt")
+        tot_neg.setText("Total Negativity = " + str(self.grid.total_negativity()))
+        most_neg_pt.setText("Most Negative Point = " +str(self.grid.most_neg_pt()))
+
+    def local_view_controller(self,pt,pos):
+        #determines what the local view controller should see.
+        local_view = self.findChild(QWidget, "local_view_widget")
+        #self.pt1 = pt
+        if not self.pt1 is None:
+            value1 = self.grid.get_value(self.pt1)
+            value2 = self.grid.get_value(pt)
+            line = self.pt1.line_to(pt)
+            valuel = self.grid.sum_line(line)
+            marginal = self.grid.marginalize_grid(line)
+            local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal)
+        else:
+            value1 = self.grid.get_value(pt)
+            value2 = None
+            line = None
+            valuel = None
+            marginal = None
+            local_view.set_values(pt, value1, pos, self.pt2, value2, self.pos2, line, valuel, marginal)
+
+    def connect_signals(self):
+        #establishes the connection with
+        local_view = self.findChild(QWidget, "local_view_widget")
+        wignerWidget = self.findChild(QWidget, "wignerWidget")
+        p,n = wignerWidget.p, wignerWidget.n
+        for x in finite_field_element.list_elements(p,n):
+            for y in finite_field_element.list_elements(p,n):
+                w = wignerWidget.grid.itemAtPosition(int(x),int(y)).widget()
+                w.hovered.connect(self.handle_hover)
+                w.clicked.connect(self.handle_click)
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
+    #MainWindow = QtWidgets.QMainWindow()
+    MainWindow = MyMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
+    MainWindow.connect_signals()
+    MainWindow.set_labels()
     MainWindow.show()
     sys.exit(app.exec_())

@@ -7,15 +7,37 @@ class grid_element(object):
         self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
 
     def get_value(self, pt):
+        if pt is None:
+            return None
         return self.values[int(pt.y)][int(pt.x)]
 
     def marginalize_grid(self, line):
+        if line is None:
+            return None
         lines = line_of_plane.gen_parallel_lines(line)
         marginal = []
         for l in lines:
             marginal.append(sum([self.get_value(pt) for pt in line.gen_points()]) )
         return marginal
 
+    def sum_line(self, line):
+        if line is None:
+            return None
+        #returns the sum of the values over the line
+        return sum([self.get_value(pt) for pt in line.gen_points()])
+
+    def total_negativity(self):
+        p,n =self.p, self.n
+        return sum([ sum([ self.values[row][col] if self.values[row][col]<0 else 0 for col in range(p**n)]) for row in range(p**n)])
+    def most_neg_pt(self):
+        #returns a point where the value is minimized.
+        val = float('inf')
+        for x in finite_field_element.list_elements(self.p,self.n):
+            for y in finite_field_element.list_elements(self.p,self.n):
+                if val > self.get_value(point_of_plane((x,y))):
+                    val = self.get_value(point_of_plane((x,y)))
+                    current = point_of_plane((x,y))
+        return current
 
 def test_grid():
     p=5

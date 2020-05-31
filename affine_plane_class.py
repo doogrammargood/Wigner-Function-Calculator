@@ -12,6 +12,8 @@ class point_of_plane(object):
         self.y = self.coordinates[1]
     def line_to(self, other):
         #returns the line from self to other.
+        if other is None or other == self:
+            return None
         dx = self.x-other.x
         dy = self.y-other.y
         if not dy.is_zero():
@@ -28,6 +30,8 @@ class point_of_plane(object):
         #return(str(self.coordinates))
 
     def __eq__(self, other):
+        if other is None:
+            return False
         return self.x == other.x and self.y == other.y
 
     def is_on_line(self,line):
