@@ -1,5 +1,5 @@
 from wigner_function import *
-class grid_element(object):
+class grid_element(object_modified):
     def __init__(self, matrix, p, n):
         assert len(matrix) == p**n
         self.p = p

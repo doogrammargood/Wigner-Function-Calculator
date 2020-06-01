@@ -108,8 +108,8 @@ class Pos(QWidget):
 class WignerWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super(QWidget, self).__init__(*args)
-        self.flagged_pos=[]
-        self.marked_pos=[]
+        self.flagged_pts=[]
+        self.marked_pts=[]
         #self.b_size=25
         #w = QWidget()
         hb = QHBoxLayout()
@@ -141,29 +141,26 @@ class WignerWidget(QWidget):
                 #w.clicked.connect(self.flags_changed)
 
 
-    def set_flagged(self, flagged):
-        self.new_flags = [f for f in flagged if not f is None]
-        self.update_markings()
-
-    def update_markings(self):
-        new_markings = []
-        for pt in self.flagged_pos:
+    def set_flagged(self, flags):
+        flagged =[f for f in flags if not f.isNone()]
+        for pt in self.flagged_pts:
             w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
             w.unflag()
-        for pt in self.new_flags:
+
+        for pt in flagged:
             w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
             w.flag()
-        if len(self.flagged_pos) ==2:
-            for pt in self.flagged_pos[1].line_to(self.flagged_pos[0]).gen_points():
-                w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
-                w.set_unmark()
-        if len(self.new_flags) ==2:
-            for pt in self.new_flags[1].line_to(self.new_flags[0]).gen_points():
-                w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
-                w.set_mark()
-                new_markings.append(w.pt)
-        self.flagged_pos = self.new_flags
-        self.marked_pos = new_markings
+        self.flagged_pts = flagged
+
+    def set_markings(self, new_marks):
+        new_markings = [m for m in new_marks if not m.isNone()]
+        for pt in self.marked_pts:
+            w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
+            w.set_unmark()
+        for pt in new_markings:
+            w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
+            w.set_mark()
+        self.marked_pts = new_markings
 
     def set_flags_sl(self,pt):
         generator = sl_matrix.gen_with_order(self.p,self.n)
@@ -198,11 +195,11 @@ class WignerWidget(QWidget):
 class LocalView(QWidget):
     def __init__(self, *args, **kwargs):
         super(QWidget, self).__init__(*args)
-        self.pt1 = None
+        self.pt1 = point_of_plane(None)
         self.value1 = None
-        self.pt2 = None
+        self.pt2 = point_of_plane(None)
         self.value2 = None
-        self.line = None
+        self.line = line_of_plane(None)
         self.valuel = None
         self.marginal = None
         self.pos1 = Pos(None)

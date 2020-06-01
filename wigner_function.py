@@ -1,7 +1,7 @@
 import itertools
 import numpy as np
 import math
-
+import traceback
 from sl_class import *
 
 def is_unitary(m):
@@ -71,6 +71,8 @@ def discrete_wig_fuct(x,mat):
     return np.real(np.trace(np.matmul(phase_ptA(x), mat))) * 1/(p**n)
 
 def random_pure_state(p,n):
+    # for line in traceback.format_stack():
+    #     print(line.strip())
     vector1 = np.array(np.random.rand(p**n)) - np.array([0.5 for i in range(p**n)])
     vector2 = 1j*( np.array(np.random.rand(p**n)) - np.array([0.5 for i in range(p**n)]) )
     vector = vector1 + vector2

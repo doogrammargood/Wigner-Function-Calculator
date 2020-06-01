@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+2# -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'wig_calc_interface.ui'
 #
@@ -8,6 +8,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from main import *
+import pickle
 class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
@@ -142,12 +143,39 @@ class MyMainWindow(QMainWindow):
         self.n = 2
         self.density_matrix = random_pure_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
-        self.pt1 = None
-        self.pt2 = None
+        self.pt1 = point_of_plane(None)
+        self.pt2 = point_of_plane(None)
         self.pos1 = Pos(None)
         self.pos2 = Pos(None)
+        self.line = line_of_plane(None)
+
+    def dictionary_state(self):
+        #produces a dictionary which represents the state of the program.
+        dict = {'p': self.p, 'n': self.n, 'density_matrix': self.density_matrix,
+                'pt1': str(self.pt1), 'pt2': str(self.pt2) }
+        return dict
+
+    def update_from_dict(self,dict):
+        self.p = int(dict['p'])
+        self.n = int(dict['n'])
+        self.change_size(self.p, self.n)
+        self.density_matrix = dict['density_matrix']
+        self.change_matrix(self.density_matrix)
+        self.grid = grid_element(self.density_matrix,self.p,self.n)
+        self.pt1 = point_of_plane.from_string( dict['pt1'], self.p, self.n)
+        self.pt2 = point_of_plane.from_string( dict['pt2'], self.p, self.n)
+        wig = self.findChild(QWidget, "wignerWidget")
+        pos1 = self.get_pos(self.pt1)
+        pos1.flag()
+        self.pos1.flag()
+        self.pos1.copy_data(pos1)
+        pos2 = self.get_pos(self.pt2)
+        pos2.flag()
+        self.pos2.copy_data(pos2)
+        self.pos2.flag()
+
     def change_matrix(self, new_matrix):
-        self.density_matrix = random_pure_state(self.p,self.n)
+        self.density_matrix = new_matrix
         self.grid = grid_element(self.density_matrix, self.p, self.n)
         w = self.findChild(QWidget, "wignerWidget")
         w.set_values_from_grid(self.grid)
@@ -174,39 +202,48 @@ class MyMainWindow(QMainWindow):
             self.change_matrix(None)
         elif e.key() == QtCore.Qt.Key_A:
             self.change_size(3, 2)
+        elif e.key() == QtCore.Qt.Key_S:
+            self.save("test_file.wig")
+        elif e.key() == QtCore.Qt.Key_L:
+            self.load("test_file.wig")
 
     def handle_click(self,pt):
+        #This function is ugly. N
         wig = self.findChild(QWidget, "wignerWidget")
         pos = wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
-        if self.pt1 is None:
+        if self.pt1.isNone():
             self.pt1 = pt
             wig.set_flagged([self.pt1, self.pt2])
             self.pos1.copy_data(pos)
         elif pt == self.pt1:
             self.pt1 = self.pt2
-            self.pt2 = None
+            self.pt2 = point_of_plane(None)
             wig.set_flagged([self.pt1, self.pt2])
             self.pos1.copy_data(self.pos2)
             self.pos2.copy_data(Pos(None))
             self.pos1.set_unmark()
+            self.line = line_of_plane(None)
         elif pt == self.pt2:
-            self.pt2 = None
+            self.pt2 = point_of_plane(None)
             wig.set_flagged([self.pt1, self.pt2])
             self.pos2.copy_data(Pos(None))
             self.pos1.set_unmark()
+            self.line = line_of_plane(None)
         else:
             self.pt2 = pt
             wig.set_flagged([self.pt1, self.pt2])
             self.pos2.copy_data(pos)
             self.pos1.set_mark()
-        self.local_view_controller(pt,pos)
+            self.line = self.pt1.line_to(self.pt2)
+        self.update_views(pt,pos)
 
 
     def handle_hover(self,pt):
         wig = self.findChild(QWidget, "wignerWidget")
         pos = wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
-        if self.pt2 is None:
-            self.local_view_controller(pt,pos)
+        self.update_views(pt,pos)
+        # if self.pt2.isNone():
+        #     self.update_views(pt,pos)
 
     def set_labels(self):
         tot_neg = self.findChild(QLabel, "tot_neg_label")
@@ -214,24 +251,32 @@ class MyMainWindow(QMainWindow):
         tot_neg.setText("Total Negativity = " + str(self.grid.total_negativity()))
         most_neg_pt.setText("Most Negative Point = " +str(self.grid.most_neg_pt()))
 
-    def local_view_controller(self,pt,pos):
+    def update_views(self,pt,pos):
         #determines what the local view controller should see.
+
         local_view = self.findChild(QWidget, "local_view_widget")
+        wig = self.findChild(QWidget, "wignerWidget")
         #self.pt1 = pt
-        if not self.pt1 is None:
+        if self.pt1.isNone():
+            wig.set_markings([])
+            value1 = self.grid.get_value(pt)
+            local_view.set_values(pt, value1, self.pos1, point_of_plane(None), None, Pos(None), line_of_plane(None), None, None)
+        elif self.pt2.isNone():
             value1 = self.grid.get_value(self.pt1)
             value2 = self.grid.get_value(pt)
             line = self.pt1.line_to(pt)
             valuel = self.grid.sum_line(line)
             marginal = self.grid.marginalize_grid(line)
             local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal)
+            wig.set_markings(list(line.gen_points()))
         else:
-            value1 = self.grid.get_value(pt)
-            value2 = None
-            line = None
-            valuel = None
-            marginal = None
-            local_view.set_values(pt, value1, pos, self.pt2, value2, self.pos2, line, valuel, marginal)
+            value1 = self.grid.get_value(self.pt1)
+            value2 = self.grid.get_value(self.pt2)
+            line = self.line
+            valuel = self.grid.sum_line(line)
+            marginal = self.grid.marginalize_grid(line)
+            local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, self.line, valuel, marginal)
+            wig.set_markings(list(self.line.gen_points()))
 
     def connect_signals(self):
         #establishes the connection with
@@ -243,6 +288,23 @@ class MyMainWindow(QMainWindow):
                 w = wignerWidget.grid.itemAtPosition(int(x),int(y)).widget()
                 w.hovered.connect(self.handle_hover)
                 w.clicked.connect(self.handle_click)
+
+    def save(self,filename):
+        file = open(filename, "wb")
+        pickle.dump(self.dictionary_state(), file)
+
+    def load(self,filename):
+        file = open(filename, "rb")
+        dict = pickle.load(file)
+        self.update_from_dict(dict)
+        self.update()
+
+    def get_pos(self,pt):
+        wignerWidget = self.findChild(QWidget, "wignerWidget")
+        if pt.isNone():
+            return Pos(None)
+        else:
+            return wignerWidget.grid.itemAtPosition(int(x),int(y)).widget()
 
 if __name__ == "__main__":
     import sys
