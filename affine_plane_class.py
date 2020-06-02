@@ -20,7 +20,7 @@ class point_of_plane(object_modified):
     def line_to(self, other):
         #returns the line from self to other.
         if other.isNone() or other == self:
-            return None
+            return line_of_plane(None)
         dx = self.x-other.x
         dy = self.y-other.y
         if not dy.is_zero():
@@ -96,6 +96,12 @@ class line_of_plane(object_modified):
             b, c = finite_field_element.one(a.p,a.n), binv*c
         return (a,b,c)
 
+    def parallel_through(self,pt):
+        #returns the line pararell to self through pt.
+        a, b, c, = self.coefficients
+        c = a*pt.x + b*pt.y
+        return line_of_plane((a,b,c))
+
     def __str__(self):
         a,b,c = self.coefficients
         return str(a) + str(b) + str(c)
@@ -114,6 +120,8 @@ class line_of_plane(object_modified):
                 yield( point_of_plane((c/a, y) )  )
             #ax+by=c => y=(c-ax)/b
     def gen_parallel_lines(self):
+        if self.isNone():
+            return([])
         a,b,c = self.coefficients
         return ( (line_of_plane((a,b,x)) for x in finite_field_element.list_elements(self.p, self.n)) )
 

@@ -12,6 +12,7 @@ class grid_element(object_modified):
         return self.values[int(pt.y)][int(pt.x)]
 
     def marginalize_grid(self, line):
+        return None
         if line is None:
             return None
         lines = line_of_plane.gen_parallel_lines(line)

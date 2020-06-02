@@ -86,6 +86,40 @@ def zero_state(p,n):
     vector = np.matrix([1.0 if i ==0 else 0 for i in range(p**n)])
     return np.matmul(vector.H,vector)
 
+def state_with_special_order(p, i=4):#assume n = 1 for now..
+    s = sl_matrix.gen_with_order(p,1).__next__()
+    unitary = unitary_from_sl(s,p)
+    eig = np.linalg.eig(unitary)
+    eig = eig[1][:,i].T
+    mat = np.matrix(eig)
+    mat = np.matmul(mat.H,mat)
+    return mat
+
+
+
+def unitary_from_sl(mat, p):
+    #Assumes p is prime.
+    alpha = int(mat.matrix[0][0])
+    beta = int(mat.matrix[0][1])
+    gamma = int(mat.matrix[1][0])
+    epsilon = int(mat.matrix[1][1])
+    omega = np.exp((2*np.pi*1j)/float(p))
+    tau = omega ** modinv(2,p)
+    if p==2:
+        tau = 1j
+    array = []
+    if beta == 0:
+        array = [[tau**(alpha*gamma*r**2) if (alpha*r)%p==c else 0 for c in range(p)] for r in range(p)]
+        return np.matrix(array)
+    else:
+        for j in range(p):
+            row = []
+            for k in range(p):
+                #print (alpha*k**2 - 2*j*k + epsilon*j**2)%p *(beta**-1)
+                row.append(p**-0.5 * tau** ( (alpha*k**2 - 2*j*k + epsilon*j**2) *(beta**-1) ))
+            array.append(row)
+        return np.matrix(array)
+
 def test_functions():
     p,n = 5,1
     r= random_pure_state(p,n)

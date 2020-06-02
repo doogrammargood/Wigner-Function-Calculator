@@ -139,15 +139,23 @@ class Ui_MainWindow(object):
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 3
-        self.n = 2
+        self.p = 7
+        self.n = 1
         self.density_matrix = random_pure_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
+        self.clear_data()
+    def clear_data(self):
         self.pt1 = point_of_plane(None)
         self.pt2 = point_of_plane(None)
         self.pos1 = Pos(None)
         self.pos2 = Pos(None)
         self.line = line_of_plane(None)
+
+    def _init2(self):
+        #to be called after the ui has been set up.
+        self.wig = self.findChild(QWidget, "wignerWidget")
+        self.local_view = self.findChild(QWidget,"local_view_widget")
+
 
     def dictionary_state(self):
         #produces a dictionary which represents the state of the program.
@@ -164,7 +172,6 @@ class MyMainWindow(QMainWindow):
         self.grid = grid_element(self.density_matrix,self.p,self.n)
         self.pt1 = point_of_plane.from_string( dict['pt1'], self.p, self.n)
         self.pt2 = point_of_plane.from_string( dict['pt2'], self.p, self.n)
-        wig = self.findChild(QWidget, "wignerWidget")
         pos1 = self.get_pos(self.pt1)
         pos1.flag()
         self.pos1.flag()
@@ -177,21 +184,24 @@ class MyMainWindow(QMainWindow):
     def change_matrix(self, new_matrix):
         self.density_matrix = new_matrix
         self.grid = grid_element(self.density_matrix, self.p, self.n)
-        w = self.findChild(QWidget, "wignerWidget")
-        w.set_values_from_grid(self.grid)
+        self.wig.set_values_from_grid(self.grid)
         self.set_labels()
 
     def change_size(self, p, n):
+        self.clear_data()
         self.p=p
         self.n=n
         self.density_matrix = random_pure_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n)
-        current = self.findChild(QWidget, "wignerWidget")
+        self.flagged_pos = []
+
+        current = self.wig
         layout = current.parent().layout()
         for i in reversed(range(layout.count())):
             layout.itemAt(i).widget().setParent(None)
         w = WignerWidget(p=self.p, n=self.n, grid =self.grid)
         w.setObjectName("wignerWidget")
+        self.wig = w
         layout.addWidget(w)
         w.show()
 
@@ -199,7 +209,8 @@ class MyMainWindow(QMainWindow):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         elif e.key() == QtCore.Qt.Key_Space:
-            self.change_matrix(None)
+            self.change_matrix(state_with_special_order(self.p))
+            #self.change_matrix(None)
         elif e.key() == QtCore.Qt.Key_A:
             self.change_size(3, 2)
         elif e.key() == QtCore.Qt.Key_S:
@@ -209,29 +220,28 @@ class MyMainWindow(QMainWindow):
 
     def handle_click(self,pt):
         #This function is ugly. N
-        wig = self.findChild(QWidget, "wignerWidget")
-        pos = wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+        pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         if self.pt1.isNone():
             self.pt1 = pt
-            wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_flagged([self.pt1, self.pt2])
             self.pos1.copy_data(pos)
         elif pt == self.pt1:
             self.pt1 = self.pt2
             self.pt2 = point_of_plane(None)
-            wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_flagged([self.pt1, self.pt2])
             self.pos1.copy_data(self.pos2)
             self.pos2.copy_data(Pos(None))
             self.pos1.set_unmark()
             self.line = line_of_plane(None)
         elif pt == self.pt2:
             self.pt2 = point_of_plane(None)
-            wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_flagged([self.pt1, self.pt2])
             self.pos2.copy_data(Pos(None))
             self.pos1.set_unmark()
             self.line = line_of_plane(None)
         else:
             self.pt2 = pt
-            wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_flagged([self.pt1, self.pt2])
             self.pos2.copy_data(pos)
             self.pos1.set_mark()
             self.line = self.pt1.line_to(self.pt2)
@@ -239,11 +249,8 @@ class MyMainWindow(QMainWindow):
 
 
     def handle_hover(self,pt):
-        wig = self.findChild(QWidget, "wignerWidget")
-        pos = wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+        pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         self.update_views(pt,pos)
-        # if self.pt2.isNone():
-        #     self.update_views(pt,pos)
 
     def set_labels(self):
         tot_neg = self.findChild(QLabel, "tot_neg_label")
@@ -254,38 +261,34 @@ class MyMainWindow(QMainWindow):
     def update_views(self,pt,pos):
         #determines what the local view controller should see.
 
-        local_view = self.findChild(QWidget, "local_view_widget")
-        wig = self.findChild(QWidget, "wignerWidget")
         #self.pt1 = pt
         if self.pt1.isNone():
-            wig.set_markings([])
+            self.wig.set_markings([])
             value1 = self.grid.get_value(pt)
-            local_view.set_values(pt, value1, self.pos1, point_of_plane(None), None, Pos(None), line_of_plane(None), None, None)
+            self.local_view.set_values(pt, value1, pos, point_of_plane(None), None, Pos(None), line_of_plane(None), None, None)
         elif self.pt2.isNone():
             value1 = self.grid.get_value(self.pt1)
             value2 = self.grid.get_value(pt)
             line = self.pt1.line_to(pt)
             valuel = self.grid.sum_line(line)
             marginal = self.grid.marginalize_grid(line)
-            local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal)
-            wig.set_markings(list(line.gen_points()))
+            self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal)
+            self.wig.set_markings(list(line.gen_points()))
         else:
             value1 = self.grid.get_value(self.pt1)
             value2 = self.grid.get_value(self.pt2)
-            line = self.line
+            line = self.line.parallel_through(pt)
             valuel = self.grid.sum_line(line)
             marginal = self.grid.marginalize_grid(line)
-            local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, self.line, valuel, marginal)
-            wig.set_markings(list(self.line.gen_points()))
+            self.local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, self.line, valuel, marginal)
+            self.wig.set_markings(list(line.gen_points()))
 
     def connect_signals(self):
         #establishes the connection with
-        local_view = self.findChild(QWidget, "local_view_widget")
-        wignerWidget = self.findChild(QWidget, "wignerWidget")
-        p,n = wignerWidget.p, wignerWidget.n
+        p,n = self.wig.p, self.wig.n
         for x in finite_field_element.list_elements(p,n):
             for y in finite_field_element.list_elements(p,n):
-                w = wignerWidget.grid.itemAtPosition(int(x),int(y)).widget()
+                w = self.wig.grid.itemAtPosition(int(x),int(y)).widget()
                 w.hovered.connect(self.handle_hover)
                 w.clicked.connect(self.handle_click)
 
@@ -300,11 +303,10 @@ class MyMainWindow(QMainWindow):
         self.update()
 
     def get_pos(self,pt):
-        wignerWidget = self.findChild(QWidget, "wignerWidget")
         if pt.isNone():
             return Pos(None)
         else:
-            return wignerWidget.grid.itemAtPosition(int(x),int(y)).widget()
+            return self.wig.grid.itemAtPosition(int(x),int(y)).widget()
 
 if __name__ == "__main__":
     import sys
@@ -313,6 +315,7 @@ if __name__ == "__main__":
     MainWindow = MyMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
+    MainWindow._init2()
     MainWindow.connect_signals()
     MainWindow.set_labels()
     MainWindow.show()

@@ -6,20 +6,18 @@ from PyQt5.QtCore import *
 #from sl_class import *
 from wigner_function import *
 from grid_class import *
-#import math
+import math
 IMG_FLAG = QImage("./images/flag.png")
 
 def find_color(value, min, max):
-    #TODO: Find a better way to draw these colors.
-    assert value <= max and value >= min
+    epsilon = 0.001
+    assert value <= max + epsilon and value >= min - epsilon
     interval = max - min
     moved_val = value - min
     ratio = moved_val / interval
-    # x = 255 ** ratio
-    # y = 3*255/x
-    # x = int(x)
-    # y = int(y)
-    return QColor(255*(1-ratio), 0, 255*ratio)
+    ratio = ratio * math.pi / 2
+
+    return QColor(255*(math.cos(ratio)), 255*math.cos(ratio), 255*math.sin(ratio))
 
 
 class Pos(QWidget):
@@ -41,12 +39,19 @@ class Pos(QWidget):
             self.x = None
             self.y = None
         else:
-            self.setFixedSize(QSize(20, 20))
             self.pt = pt
             self.x = pt.x
             self.y = pt.y
             self.dim = self.x.p**self.x.n
             self.magnify = False
+            if self.dim < 15:
+                self.setFixedSize(QSize(30, 30))
+            elif self.dim < 30:
+                self.setFixedSize(QSize(20, 20))
+            elif self.dim < 60:
+                self.setFixedSize(QSize(10, 10))
+            else:
+                self.setFixedSize(QSize(5, 5))
             self.installEventFilter(self)
 
     def paintEvent(self, event):
@@ -125,6 +130,8 @@ class WignerWidget(QWidget):
         #self.setCentralWidget(w)
         self.p=kwargs['p']
         self.n=kwargs['n']
+        if self.p**self.n > 60:
+            self.grid.setSpacing(1)
         self.init_map(self.p,self.n)
 
         grid = kwargs['grid']
