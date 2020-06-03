@@ -1,13 +1,7 @@
 #from sage.all import *
 import itertools
+from num_theory_functions import *
 
-
-def modinv(a, m):
-    a = a % m;
-    for x in range(1, m) :
-        if ((a * x) % m == 1) :
-            return x
-    return 1
 
 class polynomial_element(object):
     #n is an upper bound on the degree, p is the prime field of coefficients.

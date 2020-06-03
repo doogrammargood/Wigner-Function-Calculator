@@ -136,7 +136,7 @@ class WignerWidget(QWidget):
 
         grid = kwargs['grid']
         self.set_values_from_grid(grid)
-        self.show()
+        #self.show()
 
     def init_map(self,p,n):
         # Add positions to the map

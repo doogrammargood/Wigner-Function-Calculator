@@ -48,6 +48,8 @@ class point_of_plane(object_modified):
             return False
 
     def is_on_line(self,line):
+        if self.isNone() or line.isNone():
+            return False
         a,b,c = line.coefficients
         return ( (a*self.x+b*self.y-c).is_zero() )
 
