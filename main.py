@@ -7,6 +7,7 @@ from PyQt5.QtCore import *
 from wigner_function import *
 from grid_class import *
 import math
+import pyqtgraph as pg
 IMG_FLAG = QImage("./images/flag.png")
 
 def find_color(value, min, max):
@@ -223,7 +224,16 @@ class LocalView(QWidget):
         self.label_value2 = QLabel()
         self.label_line = QLabel()
         self.label_valuel = QLabel()
-        self.label_marginal = QLabel()
+        self.marginal_display = pg.PlotWidget()
+        #size_policy = QSizePolicy()
+        size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        #print(self.marginal_display.sizePolicy)
+        self.marginal_display.setSizePolicy( size_policy )
+        #print(self.marginal_display.sizePolicy)
+        #setHorizontalPolicy(QSizePolicy.Expanding)
+        self.marginal_display.setFixedHeight(100)
+        self.marginal_display.setFixedWidth(500)
+        #self.marginal_display.adjustSize()
         h1 = QHBoxLayout()
         v1 = QVBoxLayout()
         vb.addLayout(h1)
@@ -243,10 +253,13 @@ class LocalView(QWidget):
 
         vb.addWidget(self.label_line)
         vb.addWidget(self.label_valuel)
-        vb.addWidget(self.label_marginal)
 
+        h_marg = QHBoxLayout()
+        h_marg.addWidget(self.marginal_display)
+        vb.addLayout(h_marg)
+        #self.marginal_display.resize(40,50)
         self.set_labels()
-        self.show()
+        #self.show()
     def set_values(self, pt1, value1, pos1, pt2, value2, pos2, line, valuel, marginal):
         self.pt1 = pt1
         self.value1 = value1
@@ -267,11 +280,19 @@ class LocalView(QWidget):
         self.label_value2.setText("Value of pt2 = "+ str(self.value2) )
         self.label_line.setText("line = " + str(self.line))
         self.label_valuel.setText("Value of Line = " + str(self.valuel))
-        self.label_marginal = self.draw_marginal()
+        #self.marginal_display.setText("Hoo")
+        if not self.line.isNone():
+            self.marginal_display.clear()
+            self.draw_marginal()
 
     def draw_marginal(self):
-        #TODO: find a way to represent the maginal distribution, like a bar graph.
-        return QLabel()
+        dim = self.pt1.p ** self.pt1.n
+        x = np.arange(dim)
+        y1 = self.marginal
+        self.marginal_display.setMouseEnabled(x=True, y=False)
+        self.marginal_display.setYRange(0, max(y1))
+        c=self.line.coefficients[2]
+        self.marginal_display.addItem(pg.BarGraphItem(x=x, height=y1, width=0.6, brushes=['b' if i != int(c) else 'y' for i in range(dim)]))
 
     # def self.paint_event(self):
     #     p = QPainter(self)

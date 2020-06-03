@@ -5,21 +5,31 @@ class grid_element(object_modified):
         self.p = p
         self.n = n
         self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
-
+        self.marginals = {}
+        self.record_marginals()
     def get_value(self, pt):
         if pt is None:
             return None
         return self.values[int(pt.y)][int(pt.x)]
 
-    def marginalize_grid(self, line):
-        return None
+    def record_marginals(self):
+        for line in point_of_plane.origin(self.p, self.n).gen_lines():
+            self.marginals[str(line)] = self._marginalize_grid(line)
+    def _marginalize_grid(self, line):
+
         if line is None:
             return None
         lines = line_of_plane.gen_parallel_lines(line)
         marginal = []
         for l in lines:
-            marginal.append(sum([self.get_value(pt) for pt in line.gen_points()]) )
+            marginal.append(sum([self.get_value(pt) for pt in l.gen_points()]) )
         return marginal
+
+    def marginalize_grid(self, line):
+        if line.isNone():
+            return []
+        cached_line = line.parallel_through(point_of_plane.origin(self.p,self.n))
+        return self.marginals[str(cached_line)]
 
     def sum_line(self, line):
         if line is None:

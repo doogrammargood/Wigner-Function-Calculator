@@ -72,6 +72,10 @@ class point_of_plane(object_modified):
         y = finite_field_element(y,p,n)
         return point_of_plane((x,y))
 
+    @classmethod
+    def origin(cls,p,n):
+        return point_of_plane((finite_field_element.zero(p,n),finite_field_element.zero(p,n)))
+
 
 class line_of_plane(object_modified):
     def __init__(self, coefficients):
