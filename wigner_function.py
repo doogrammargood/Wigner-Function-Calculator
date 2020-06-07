@@ -71,7 +71,10 @@ def phase_ptA(point):
     return matrix
 
 def phase_pt_general(pt):
-    point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
+    if pt.x.n >1:
+        point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
+    else:
+        point = pt
     new_pt = point_of_plane((point.x + point.x, point.y + point.y))
     return weil_general(new_pt) @ parity_operator_general(point.x.p,point.x.n)
 

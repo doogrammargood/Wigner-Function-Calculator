@@ -8,7 +8,7 @@ class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
         self.p = 7
-        self.n = 2
+        self.n = 1
         #self.density_matrix = random_pure_state(self.p,self.n)
         #self.density_matrix = matrix_from_gross()
         #self.density_matrix = zero_state(self.p,self.n)
