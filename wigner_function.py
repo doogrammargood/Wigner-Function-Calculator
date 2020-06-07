@@ -29,9 +29,8 @@ def weil_elementary( z, x, p ):
 
 def weil_general(pt):
     p = pt.x.p
-    x_dual = finite_matrix.convert_to_dual(pt.x)
     mat = None
-    for a,b in zip(x_dual.coordinates, pt.y.coordinates):
+    for a,b in zip(pt.x.coordinates, pt.y.coordinates):
         new_mat = weil_elementary(a,b,p)
         if mat is None:
             mat = new_mat
@@ -53,7 +52,10 @@ def phase_pt_elementary(x,p):
 
 def phase_ptA(point):
     assert isinstance(point, point_of_plane)
-    x_dual = finite_matrix.convert_to_dual(point.x)
+    if point.x.n > 0:
+        x_dual = finite_matrix.convert_to_dual(point.x)
+    else:
+        x_dual = point.x
     x_coords = x_dual.coordinates
     y_coords = point.y.coordinates
     p = point.x.p
@@ -68,7 +70,8 @@ def phase_ptA(point):
 
     return matrix
 
-def phase_pt_general(point):
+def phase_pt_general(pt):
+    point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
     new_pt = point_of_plane((point.x + point.x, point.y + point.y))
     return weil_general(new_pt) @ parity_operator_general(point.x.p,point.x.n)
 

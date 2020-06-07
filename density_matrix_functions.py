@@ -24,7 +24,7 @@ def random_pure_state(p,n):
     return matrix_from_list(vector)
 def zero_state(p,n):
     vector = np.array([1.0 if i ==0 else 0 for i in range(p**n)])
-    vector = np.array(weil_elementary(0,1,p)).dot(vector)
+    #vector = np.array(weil_elementary(0,1,p)).dot(vector)
     return matrix_from_list(vector)
 
 def maximally_mixed_state(p,n):
@@ -33,7 +33,7 @@ def maximally_mixed_state(p,n):
 
 def super_position_state(p,n):
     vector = np.array([1.0 for i in range(p**n)])
-    vector = np.array(weil_elementary(1,0,p)).dot(vector)
+    #vector = np.array(weil_elementary(1,0,p)).dot(vector)
     #vector = np.matmul(weil_elementary( -1, 0,p),vector.T).T
     return matrix_from_list(vector)
 

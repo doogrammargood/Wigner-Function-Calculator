@@ -76,8 +76,6 @@ class finite_matrix(object):
     @classmethod
     def convert_to_dual(cls, ffe):
         col_mat = cls.dual_basis_conversion[(ffe.p,ffe.n)] * finite_matrix(ffe)
-        #print(finite_matrix(ffe))
-        #print(col_mat)
         return finite_field_element.from_vector(col_mat.column_matrix_to_vector())
     def inverse(self):
         elts = self.elements.copy()
@@ -125,11 +123,12 @@ class finite_matrix(object):
             #print(elts)
             #print("ooh")
             pivot = find_nonzero(elts,top,h,x_index)
+
             elts = swap_row(elts, top, pivot)
             iden = swap_row(iden, top, pivot)
-
-            elts = scale_row(elts, top, elts[top][x_index].inverse() )
-            iden = scale_row(iden, top, elts[top][x_index].inverse() )
+            scale = elts[top][x_index].inverse()
+            elts = scale_row(elts, top, scale )
+            iden = scale_row(iden, top, scale )
 
             elts, iden = clear_column(elts, iden, top, x_index)
             top += 1
@@ -145,9 +144,11 @@ def process_dual_matrices(dict, p, n):
     vectors = []
     for i in range(n):
         vectors.append(dict[(i,p,n)].to_vector())
+    #print(M)
     M = finite_matrix(vectors)
     M = M.transpose()
     M = M.inverse()
+    assert M*(M.inverse() )==finite_matrix.identity(n,p,1)
     return M
 def record_dual_basis_transform():
     dict = finite_field_element.dual_basis
@@ -167,6 +168,9 @@ def record_dual_basis_transform():
 #record_dual_basis_transform()
 #finite_matrix.load_dual_basis_matrices()
 def check_dual_basis_transform():
-    x = finite_field_element([1,0,3], 5,2)
-    print(finite_matrix.convert_to_dual(x))
+    x = finite_field_element([1,0,3], 5,3)
+    y = finite_matrix.convert_to_dual(x)
+    print(y)
+    for i in range(3):
+        print(finite_field_element.dual_basis[(i,17,3)])
 #check_dual_basis_transform()
