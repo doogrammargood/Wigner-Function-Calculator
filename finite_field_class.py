@@ -1,7 +1,7 @@
 #from sage.all import *
 import itertools
 from num_theory_functions import *
-
+import pickle
 
 class polynomial_element(object):
     #n is an upper bound on the degree, p is the prime field of coefficients.
@@ -117,21 +117,14 @@ class polynomial_element(object):
 class finite_field_element(polynomial_element):
     #These are polynomial_elements identified up to their conway polynomials.
     conway_polynomial={(3,3): polynomial_element([1,2,0,1],3,4)}
-
+    dual_basis = {}
     @classmethod
-    def load_conway_polynomials(cls):
-        f = open('conway_poly_lists.txt', 'r')
-        lines = f.readlines()
-        for l in lines:
-            ln = l.split("%")
-            #print(eval(ln[0]))
-            key=(eval(ln[0]), eval(ln[1]))
-            #print (key)
-            list = eval( ln[2] )
-
-            value = polynomial_element(list,key[0],key[1])
-            cls.conway_polynomial[key]=value
-        #print(finite_field_element.conway_polynomial)
+    def from_int(cls, a, p, n):
+        assert a < p**n
+        def dig(a,p,i):
+            return int(((a%(p**(i+1)) )- (a%(p**(i)) ) ) / p**i)
+        coff = [ dig(a,p,i)  for i in range(n)]
+        return finite_field_element(coff, p, n)
 
     def as_poly(self):
         return polynomial_element(self.coordinates, self.p, self.n)
@@ -141,6 +134,9 @@ class finite_field_element(polynomial_element):
 
     def is_one(self):
         return self == finite_field_element.one(self.p,self.n)
+
+    def copy(self):
+        return finite_field_element(self.coordinates,self.p,self.n)
 
     def __init__(self,*args, **kwargs):
         if len(args)==3:
@@ -162,6 +158,13 @@ class finite_field_element(polynomial_element):
         temp = self.as_poly() * other
         temp.n = self.n
         return finite_field_element(temp)
+
+    def __pow__(self, exp):
+        #TODO: fast exponentiation
+        current = finite_field_element.one(self.p,self.n)
+        for i in range(exp):
+            current = current * self
+        return current
 
     def __add__(self, other):
         return finite_field_element(self.as_poly() + other)
@@ -210,6 +213,46 @@ class finite_field_element(polynomial_element):
             x = x*self
             count += 1
         return count
+
+    def trace(self):
+        tot = finite_field_element.zero(self.p,self.n)
+        for k in range(self.n):
+            tot = tot + (self**( (self.p**k) %((self.p**self.n) - 1)))
+        return tot
+
+    def _dual(self):
+        p,n = self.p, self.n
+        for d in finite_field_element.list_elements(p,n):
+            satisfies = True
+            for i in range(n):
+                other = finite_field_element([1 if i==index else 0 for index in range(n)], p,n)
+                if (other == self) and not (self*d).trace().is_one():
+                        satisfies = False
+                        break
+                elif (not other == self) and (not (other*d).trace().is_zero() ):
+                    satisfies = False
+                    break
+            if satisfies:
+                return d
+    def to_vector(self):
+        #turns self into an list of length n whose elements are in the prime field.
+        return [ finite_field_element.from_int(self.coordinates[i], self.p, 1) for i in range(self.n)]
+
+    @classmethod
+    def from_vector(cls, vector):
+        p = vector[0].p
+        n = len(vector)
+        coordinates = [int(v) for v in vector]
+        return finite_field_element(coordinates,p,n)
+
+    @classmethod
+    def calculate_dual_vectors(cls,prime,power):
+        #dict = {}
+        for i in range(power):
+            basis_vector = finite_field_element([1 if i ==index else 0 for index in range(power)],prime,power)
+            cls.dual_basis[(i,prime,power)]=basis_vector._dual()
+        #cls.dual_basis = dict
+
     @classmethod
     def list_elements(cls,prime, power):
         return ( (finite_field_element(list(reversed(l)),prime,power) for l in itertools.product(range(prime), repeat = power) ) )
@@ -231,6 +274,21 @@ class finite_field_element(polynomial_element):
             if x.order() == p**n:
                 return x
 
+    @classmethod
+    def load_conway_polynomials(cls):
+        f = open('conway_poly_lists.txt', 'r')
+        lines = f.readlines()
+        for l in lines:
+            ln = l.split("%")
+            key=(eval(ln[0]), eval(ln[1]))
+            list = eval( ln[2] )
+            value = polynomial_element(list,key[0],key[1])
+            cls.conway_polynomial[key]=value
+    @classmethod
+    def load_dual_vectors(cls):
+        file = open("dual_basis.pickle", "rb")
+        cls.dual_basis=pickle.load(file)
+
 def test_finite_fields():
     #Tests inverses, associativity of addition, distributivity, commutativity.
     finite_field_element.load_conway_polynomials()
@@ -251,41 +309,35 @@ def test_finite_fields():
 #test_finite_fields()
 
 finite_field_element.load_conway_polynomials()
-#print (finite_field_element.generator(5,1))
-# def test_division():
-#
-#     primes = [3,5,7]
-#     ns = [2,3]
-#     for p in primes:
-#         for n in ns:
-#             for list1, list2 in itertools.combinations(itertools.product(range(p), repeat = n),2):
-#                 a = polynomial_element(list1, p, n)
-#                 b = polynomial_element(list2, p, n)
-#                 q,r = a/b
-#
-#                 if not b.is_zero():
-#                     assert b*q+r==a
-#                     print("good")
+def trace_tests():
+    #finite_field_element.calculate_dual_vectors(7,2)
+    #print(finite_field_element.dual_basis)
+    y = finite_field_element([1,0], 7, 2)
+    print(y)
+    print(y.trace())
+    print ( finite_field_element.dual_basis[(0,7,2)] )
+    #finite_field_element.calculate_dual_vectors(11,3)
+    x = finite_field_element([0,1,0], 5,3)
+    print(x)
+    print(x.trace())
+    print( finite_field_element.dual_basis[(1,5,3)] )
+    print ( (x*finite_field_element.dual_basis[(1,5,3)] ).trace() )
+#trace_tests()
+def prepare_dual_basis():
+    for p in [p for p in range(50) if is_prime(p)]:
+        print("p=",p)
+        if p < 10:
+            for n in range(2,5):
+                finite_field_element.calculate_dual_vectors(p,n)
+        elif p < 20:
+            for n in range(2,4):
+                finite_field_element.calculate_dual_vectors(p,n)
+        else:
+            for n in range(2,3):
+                finite_field_element.calculate_dual_vectors(p,n)
 
-#test_division()
-# print(finite_field_element.conway_polynomial[(5,2)])
-#x = finite_field_element([1,1,1],3,3)
-#y = finite_field_element([1,2,0],3,3)
-
-
-#r, s, t = y.euclidean_algorithm(x)
-# print(s)
-# print (t)
-# print(r)
-# print(x)
-# print(y)
-#assert r == s*y + t*x
-# a = finite_field_element(x)
-# a = finite_field_element([1,1],3,2)
-# b = finite_field_element([2,1],3,2)
-#print (a- a._add_inverse()).coordinates
-#print (a+b).coordinates
-#print (a*b).coordinates
-
-
-#rint a._polynomial_remainder([3,3,1],[2,1,0],3)
+    file = open("dual_basis.pickle", "wb")
+    pickle.dump(finite_field_element.dual_basis, file)
+    #This will pickle an object which will contain a dictionary for the dual basis.
+    #pass
+#prepare_dual_basis()

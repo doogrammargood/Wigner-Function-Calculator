@@ -3,43 +3,43 @@ import numpy as np
 import math
 import traceback
 from sl_class import *
-
-def is_unitary(m):
-    return np.allclose(np.eye(m.shape[0]), np.matmul(m.H, m) )
-
-def is_hermitian(m):
-    return np.allclose(np.zeros(m.shape[0]), m.H - m)
+from finite_matrix_class import *
+#from wigner_function import *
 
 def parity_operator(p):
     array=[[1.0 if c== (-r)%p else 0.0 for c in range(p)]for r in range(p)]
+    return np.matrix(array)
+
+def parity_operator_general(p,n):
+    array=[[1.0 if c== -r else 0.0 for c in finite_field_element.list_elements(p,n)]for r in finite_field_element.list_elements(p,n)]
     return np.matrix(array)
 
 def weilX(x,p):
     array=[[ 1.0 if c==(r-x)%p else 0.0 for c in range(p)]for r in range(p)]
     return np.matrix(array)
 def weilZ(z,p):
-    if p ==2:
-        if z%2 == 1:
-            return np.matrix([[1,0],[0,-1]])
-        else:
-            return np.matrix([[1,0],[0,1]])
-    else:
-        array=[[np.e**(2*np.pi*1j*z*c/p ) if c ==r else 0.0 for c in range(p)]for r in range(p)]
+    array=[[np.e**(2*np.pi*1j*z*c/p ) if c ==r else 0.0 for c in range(p)]for r in range(p)]
     return np.matrix(array)
-
-
-#def weilZ(z,p)
 
 def weil_elementary( z, x, p ):
     #assumes that n == 1
-    if p==2:
-        return 1j**(x*z)*np.matmul(weilZ(z,p),weilX(x,p))
     x=x%p
     z=z%p
-    return np.e**(-modinv(2,p)*2*np.pi*1j*x*z/ p)*np.matmul(weilZ(z,p),weilX(x,p))
+    return np.e**(-modinv(2,p)*2*np.pi*1j*x*z/ p)* ( weilZ(z,p) @ weilX(x,p) )
+
+def weil_general(pt):
+    p = pt.x.p
+    x_dual = finite_matrix.convert_to_dual(pt.x)
+    mat = None
+    for a,b in zip(x_dual.coordinates, pt.y.coordinates):
+        new_mat = weil_elementary(a,b,p)
+        if mat is None:
+            mat = new_mat
+        else:
+            mat = np.kron(new_mat, mat)
+    return mat
 
 
-#-Start of changes to finite field elements
 def phase_pt_elementary(x,p):
     #returns phase point operator A(x) for the discrete Wigner function
     #assumes p is an odd prime.
@@ -48,77 +48,34 @@ def phase_pt_elementary(x,p):
     if (x0,x1)==(0,0):
         return parity_operator(p)
     else:
-
-        return np.matmul(weil_elementary( 2*x0,2*x1 , p ),parity_operator(p))
+        return weil_elementary( 2*x0,2*x1 , p ) @ parity_operator(p)
+        #return np.matmul(np.matmul(weil_elementary(x0,x1,p),parity_operator(p)), weil_elementary(-x0,-x1,p))
 
 def phase_ptA(point):
     assert isinstance(point, point_of_plane)
-    x_coords = point.x.coordinates
+    x_dual = finite_matrix.convert_to_dual(point.x)
+    x_coords = x_dual.coordinates
     y_coords = point.y.coordinates
     p = point.x.p
     matrix = None
+    #matrix = np.kron(phase_pt_elementary( (x_coords[0],y_coords[0]), p), phase_pt_elementary( (x_coords[1],y_coords[1]), p))
     for x,y in zip(x_coords, y_coords):
+        phs = np.matrix(phase_pt_elementary( (x,y), p))
         if matrix is None:
-            matrix = phase_pt_elementary( (x,y), p)
+            matrix = phs
         else:
-            matrix =np.kron( matrix, phase_pt_elementary( (x,y), p) )
+            matrix = np.matrix(np.kron( phs, matrix ))
+
     return matrix
 
+def phase_pt_general(point):
+    new_pt = point_of_plane((point.x + point.x, point.y + point.y))
+    return weil_general(new_pt) @ parity_operator_general(point.x.p,point.x.n)
 
 def discrete_wig_fuct(x,mat):
     p=x.x.p
     n=x.x.n
-    return np.real(np.trace(np.matmul(phase_ptA(x), mat))) * 1/(p**n)
-
-def random_pure_state(p,n):
-    # for line in traceback.format_stack():
-    #     print(line.strip())
-    vector1 = np.array(np.random.rand(p**n)) - np.array([0.5 for i in range(p**n)])
-    vector2 = 1j*( np.array(np.random.rand(p**n)) - np.array([0.5 for i in range(p**n)]) )
-    vector = vector1 + vector2
-    vector = np.matrix(vector)
-    vector = vector / np.linalg.norm(vector)
-    #vector = np.matmul(weil_elementary(0,2,p),vector.T).T
-    #print (vector)
-    return np.matmul(vector.H,vector)
-
-def zero_state(p,n):
-    vector = np.matrix([1.0 if i ==0 else 0 for i in range(p**n)])
-    return np.matmul(vector.H,vector)
-
-def state_with_special_order(p, i=4):#assume n = 1 for now..
-    s = sl_matrix.gen_with_order(p,1).__next__()
-    unitary = unitary_from_sl(s,p)
-    eig = np.linalg.eig(unitary)
-    eig = eig[1][:,i].T
-    mat = np.matrix(eig)
-    mat = np.matmul(mat.H,mat)
-    return mat
-
-
-
-def unitary_from_sl(mat, p):
-    #Assumes p is prime.
-    alpha = int(mat.matrix[0][0])
-    beta = int(mat.matrix[0][1])
-    gamma = int(mat.matrix[1][0])
-    epsilon = int(mat.matrix[1][1])
-    omega = np.exp((2*np.pi*1j)/float(p))
-    tau = omega ** modinv(2,p)
-    if p==2:
-        tau = 1j
-    array = []
-    if beta == 0:
-        array = [[tau**(alpha*gamma*r**2) if (alpha*r)%p==c else 0 for c in range(p)] for r in range(p)]
-        return np.matrix(array)
-    else:
-        for j in range(p):
-            row = []
-            for k in range(p):
-                #print (alpha*k**2 - 2*j*k + epsilon*j**2)%p *(beta**-1)
-                row.append(p**-0.5 * tau** ( (alpha*k**2 - 2*j*k + epsilon*j**2) *(beta**-1) ))
-            array.append(row)
-        return np.matrix(array)
+    return np.real(np.trace( phase_pt_general(x) @ mat)) * (p**-n)
 
 def test_functions():
     p,n = 5,1
@@ -126,21 +83,21 @@ def test_functions():
     #print(phase_pt_elementary((0,1),p))
     pt = point_of_plane( (finite_field_element([0,1],5,1),finite_field_element.zero(5,1) ))
     print (discrete_wig_fuct(pt,r))
+
+def debug_test():
+    dim =5
+    a = np.matrix(weil_elementary(2,2,dim))
+    b = np.matrix(weil_elementary(2,2,dim))
+    c = np.matmul(a,b)
+    def symp(a,b):
+        return (a[0]*b[1]-b[0]*a[1])%dim
+    d = np.e**(modinv(2,dim)*(symp((2,2),(2,2)) )*2*np.pi*1j / dim)* np.matrix(weil_elementary(4,4,dim))
+    assert np.allclose(d,c)
+    print(c)
+    print(d)
+#debug_test()
+#kron_test()
 #test_functions()
-def example_from_gross():
-    p = 3
-    vector = np.matrix([0. ,1. ,-1. ])
-    vector = 2**(-.5)*vector
 
-    vectors = [vector]
-    vectors.append(np.matmul(weil_elementary(-1, 0,p),vector.T).T)
-    vectors.append(np.matmul(weil_elementary(-1, -1,p),vector.T).T)
-
-    dense_matrix = 1/3. * np.matmul(vectors[0].H, vectors[0]) + 1/3. * np.matmul(vectors[1].H, vectors[1]) +1/3. * np.matmul(vectors[2].H, vectors[2])
-    for x in finite_field_element.list_elements(3,1):
-        for y in finite_field_element.list_elements(3,1):
-            pt = point_of_plane((x,y))
-            print(discrete_wig_fuct(pt, dense_matrix))
-        print (" ")
 #example_from_gross()
 #test_functions()

@@ -1,12 +1,24 @@
 from wigner_function import *
+import multiprocessing
+from density_matrix_functions import *
 class grid_element(object_modified):
-    def __init__(self, matrix, p, n):
-        assert len(matrix) == p**n
-        self.p = p
-        self.n = n
-        self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
-        self.marginals = {}
-        self.record_marginals()
+    def __init__(self, matrix, p, n, compute_fresh = True):
+        mat_in = matrix.copy()
+        if compute_fresh:
+            assert len(matrix) == p**n
+            self.p = p
+            self.n = n
+            #self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
+            with multiprocessing.Pool(processes = 4) as poo:
+                self.values= poo.starmap(discrete_wig_fuct, [(point_of_plane((col,row)),matrix) for col, row in itertools.product(finite_field_element.list_elements(p,n), repeat = 2)] )
+            self.values = [self.values[i*(p**n):(i+1)*(p**n)] for i in range(p**n)]
+            self.values = [list(x) for x in zip(*self.values)]
+
+            self.marginals = {}
+            self.record_marginals()
+            #assert np.allclose(mat_in, matrix)
+        else:
+            pass
     def get_value(self, pt):
         if pt is None:
             return None
@@ -16,13 +28,14 @@ class grid_element(object_modified):
         for line in point_of_plane.origin(self.p, self.n).gen_lines():
             self.marginals[str(line)] = self._marginalize_grid(line)
     def _marginalize_grid(self, line):
-
+        epsilon = 10**-7
         if line is None:
             return None
-        lines = line_of_plane.gen_parallel_lines(line)
+        #lines = line_of_plane.gen_parallel_lines(line)
         marginal = []
-        for l in lines:
+        for l in line.gen_parallel_lines():
             marginal.append(sum([self.get_value(pt) for pt in l.gen_points()]) )
+        assert(abs (sum(marginal) -1) < epsilon)
         return marginal
 
     def marginalize_grid(self, line):
@@ -35,11 +48,11 @@ class grid_element(object_modified):
         if line is None:
             return None
         #returns the sum of the values over the line
-        return sum([self.get_value(pt) for pt in line.gen_points()])
+        return np.sum([self.get_value(pt) for pt in line.gen_points()])
 
     def total_negativity(self):
         p,n =self.p, self.n
-        return sum([ sum([ self.values[row][col] if self.values[row][col]<0 else 0 for col in range(p**n)]) for row in range(p**n)])
+        return np.sum([ np.sum([ self.values[row][col] if self.values[row][col]<0 else 0 for col in range(p**n)]) for row in range(p**n)])
     def most_neg_pt(self):
         #returns a point where the value is minimized.
         val = float('inf')
@@ -50,21 +63,51 @@ class grid_element(object_modified):
                     current = point_of_plane((x,y))
         return current
 
+    def dictionary_state(self):
+        #returns a dictionary with its information.
+        dict = {}
+        dict['p']=self.p
+        dict['n']=self.n
+        dict['values']=self.values
+        dict['marginals']=self.marginals
+        return dict
+
+    @classmethod
+    def from_dictonary_state(cls, dict):
+        to_return = grid_element(compute_fresh=False)
+        to_return.p=dict['p']
+        to_return.n=dict['n']
+        to_return.value = dict['values']
+        to_rreturn.marginals = dict['marginals']
+        return to_return
+
 def test_grid():
     p=5
     n=2
-    matrix = random_pure_state(p,n)
+    matrix = super_position_state_negatives(p,n)
     G=grid_element(matrix, p, n)
-    a=5+3
-    b=2
-    A = finite_field_element([3,1],5,2)
-    B = finite_field_element([2,0],5,2)
-    pt = point_of_plane((A,B))
-    assert G.get_value(pt) == G.values[b][a]
-    assert G.get_value(pt) == discrete_wig_fuct(pt, matrix)
-    #for l in line_of_plane.list_lines(p,n)
-    zero = finite_field_element.zero(p,n)
-    origin = point_of_plane((zero,zero))
-    for l in origin.gen_lines():
-        print(G.marginalize_grid(l))
+    origin = point_of_plane.origin(p,n)
+    for direction in origin.gen_lines():
+        for line in direction.gen_parallel_lines():
+            tot = np.zeros((p**n,p**n))
+            for pt in line.gen_points():
+                tot = tot + phase_pt_general(pt)
+            print(line)
+            print(np.linalg.matrix_rank(tot, tol = 10**-3))
+            assert is_hermitian(tot)
+            #assert np.linalg.matrix_rank(tot) == 1
+    #
+    # a=5+3
+    # b=2
+    # A = finite_field_element([3,1],5,2)
+    # B = finite_field_element([2,0],5,2)
+    # pt = point_of_plane((A,B))
+    # assert G.get_value(pt) == G.values[b][a]
+    # assert G.get_value(pt) == discrete_wig_fuct(pt, matrix)
+    # #for l in line_of_plane.list_lines(p,n)
+    # zero = finite_field_element.zero(p,n)
+    # origin = point_of_plane((zero,zero))
+    # for l in origin.gen_lines():
+    #     print(G.marginalize_grid(l))
+
 #test_grid()

@@ -3,12 +3,17 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 #from PyQt5.QtCore import *
 from main import *
+from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 23
-        self.n = 1
-        self.density_matrix = random_pure_state(self.p,self.n)
+        self.p = 5
+        self.n = 2
+        #self.density_matrix = random_pure_state(self.p,self.n)
+        #self.density_matrix = matrix_from_gross()
+        #self.density_matrix = zero_state(self.p,self.n)
+        #self.density_matrix = super_position_state(self.p,self.n)
+        self.density_matrix = super_position_state_negatives(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
         self.clear_data()
     def clear_data(self):
@@ -56,30 +61,6 @@ class MyMainWindow(QMainWindow):
         tot_neg.setText("Total Negativity = " + str(self.grid.total_negativity()))
         most_neg_pt.setText("Most Negative Point = " +str(self.grid.most_neg_pt()))
 
-    def dictionary_state(self):
-        #produces a dictionary which represents the state of the program.
-        dict = {'p': self.p, 'n': self.n, 'density_matrix': self.density_matrix,
-                'pt1': str(self.pt1), 'pt2': str(self.pt2) }
-        return dict
-
-    def update_from_dict(self,dict):
-        self.p = int(dict['p'])
-        self.n = int(dict['n'])
-        self.change_size(self.p, self.n)
-        self.density_matrix = dict['density_matrix']
-        self.change_matrix(self.density_matrix)
-        self.grid = grid_element(self.density_matrix,self.p,self.n)
-        self.pt1 = point_of_plane.from_string( dict['pt1'], self.p, self.n)
-        self.pt2 = point_of_plane.from_string( dict['pt2'], self.p, self.n)
-        pos1 = self.get_pos(self.pt1)
-        pos1.flag()
-        self.pos1.flag()
-        self.pos1.copy_data(pos1)
-        pos2 = self.get_pos(self.pt2)
-        pos2.flag()
-        self.pos2.copy_data(pos2)
-        self.pos2.flag()
-
     def change_matrix(self, new_matrix):
         self.density_matrix = new_matrix
         self.grid = grid_element(self.density_matrix, self.p, self.n)
@@ -111,7 +92,9 @@ class MyMainWindow(QMainWindow):
             self.change_matrix(state_with_special_order(self.p))
             #self.change_matrix(None)
         elif e.key() == QtCore.Qt.Key_A:
-            self.change_size(3, 2)
+            #mat = cat_state(self.p,self.n)
+            mat = super_position_state_negatives(self.p, self.n)
+            self.change_matrix(mat)
         elif e.key() == QtCore.Qt.Key_S:
             self.save("test_file.wig")
         elif e.key() == QtCore.Qt.Key_L:
@@ -122,6 +105,13 @@ class MyMainWindow(QMainWindow):
         elif e.key() == QtCore.Qt.Key_O:
             tab = self.findChild(QTabWidget,"tabWidget")
             tab.setCurrentIndex(0)
+        elif e.key()== QtCore.Qt.Key_P:
+            matrix = weil_elementary(-1,0,self.p) @ self.density_matrix @ weil_elementary(1,0,self.p)
+            self.change_matrix(matrix)
+        elif e.key()== QtCore.Qt.Key_Y:
+            matrix = weil_elementary(-1,-1,self.p) @ self.density_matrix @ weil_elementary(1,1,self.p)
+            self.change_matrix(matrix)
+
     def handle_click(self,pt):
         #This function is ugly. N
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
@@ -223,6 +213,31 @@ class MyMainWindow(QMainWindow):
         dict = pickle.load(file)
         self.update_from_dict(dict)
         self.update()
+
+    def dictionary_state(self):
+        #produces a dictionary which represents the state of the program.
+        dict = {'p': self.p, 'n': self.n, 'density_matrix': self.density_matrix,
+                'pt1': str(self.pt1), 'pt2': str(self.pt2), 'grid': self.grid.dictionary_state()}
+        return dict
+
+    def update_from_dict(self,dict):
+        self.p = int(dict['p'])
+        self.n = int(dict['n'])
+        self.change_size(self.p, self.n)
+        self.density_matrix = dict['density_matrix']
+        self.change_matrix(self.density_matrix)
+        self.grid = grid_element(self.density_matrix,self.p,self.n)
+        self.pt1 = point_of_plane.from_string( dict['pt1'], self.p, self.n)
+        self.pt2 = point_of_plane.from_string( dict['pt2'], self.p, self.n)
+        pos1 = self.get_pos(self.pt1)
+        pos1.flag()
+        self.pos1.flag()
+        self.pos1.copy_data(pos1)
+        pos2 = self.get_pos(self.pt2)
+        pos2.flag()
+        self.pos2.copy_data(pos2)
+        self.pos2.flag()
+
 
     def get_pos(self,pt):
         if pt.isNone():

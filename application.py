@@ -1,4 +1,4 @@
-2# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'wig_calc_interface.ui'
 #
@@ -9,6 +9,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from main_window import *
 import pickle
+from finite_matrix_class import *
+finite_matrix.load_dual_basis_matrices()
 class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):

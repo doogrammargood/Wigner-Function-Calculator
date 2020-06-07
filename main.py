@@ -47,7 +47,7 @@ class Pos(QWidget):
             self.magnify = False
             if self.dim < 15:
                 self.setFixedSize(QSize(30, 30))
-            elif self.dim < 30:
+            elif self.dim < 40:
                 self.setFixedSize(QSize(20, 20))
             elif self.dim < 60:
                 self.setFixedSize(QSize(10, 10))
@@ -123,7 +123,6 @@ class WignerWidget(QWidget):
         vb.addLayout(hb)
 
         self.grid = QGridLayout()
-        self.grid.setSpacing(2)
 
         vb.addLayout(self.grid)
         self.setLayout(vb)
@@ -133,6 +132,8 @@ class WignerWidget(QWidget):
         self.n=kwargs['n']
         if self.p**self.n > 60:
             self.grid.setSpacing(1)
+        else:
+            self.grid.setSpacing(2)
         self.init_map(self.p,self.n)
 
         grid = kwargs['grid']
@@ -275,7 +276,7 @@ class LocalView(QWidget):
 
     def set_labels(self):
         self.label_pt1.setText("point 1 = (" + str(self.pt1) + ")")
-        self.label_value1.setText("Value of pt1 ="+ str(self.value1) )
+        self.label_value1.setText("Value of pt1 = "+ str(self.value1) )
         self.label_pt2.setText("point 2 = (" + str(self.pt2) + ")")
         self.label_value2.setText("Value of pt2 = "+ str(self.value2) )
         self.label_line.setText("line = " + str(self.line))
@@ -284,6 +285,8 @@ class LocalView(QWidget):
         if not self.line.isNone():
             self.marginal_display.clear()
             self.draw_marginal()
+        else:
+            self.marginal_display.clear()
 
     def draw_marginal(self):
         dim = self.pt1.p ** self.pt1.n
