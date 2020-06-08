@@ -7,7 +7,7 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 7
+        self.p = 5
         self.n = 1
         #self.density_matrix = random_pure_state(self.p,self.n)
         #self.density_matrix = matrix_from_gross()
@@ -35,6 +35,7 @@ class MyMainWindow(QMainWindow):
         self.p_spinbox.setValue(self.p)
         self.n_spinbox.setMinimum(1)
         self.n_spinbox.setMaximum(5)
+        self.n_spinbox.setValue(self.n)
 
     def connect_signals(self, reconnect_wig = False):
         #establishes the connection with
@@ -54,12 +55,24 @@ class MyMainWindow(QMainWindow):
             p_spin.valueChanged.connect(self.handle_p_spinbox_change)
             change_size_button = self.findChild(QPushButton, "button_change_size")
             change_size_button.clicked.connect(self.handle_change_size)
+            maximally_mixed_button = self.findChild(QPushButton, "button_maximally_mixed")
+            maximally_mixed_button.clicked.connect(self.handle_maximally_mixed_button)
+            superposition_button = self.findChild(QPushButton, "button_superposition")
+            superposition_button.clicked.connect(self.handle_superpositon_button)
+            superposition_alternating_button = self.findChild(QPushButton, "button_superpositon_alternating")
+            superposition_alternating_button.clicked.connect(self.handle_superposition_alternating_button)
+            superposition_zero_negative_button = self.findChild(QPushButton, "button_superpositon_zero_negative")
+            superposition_zero_negative_button.clicked.connect(self.handle_superposition_zero_negative_button)
+            cat_state_button = self.findChild(QPushButton, "button_cat_state")
+            cat_state_button.clicked.connect(self.handle_cat_state_button)
 
     def set_labels(self):
         tot_neg = self.findChild(QLabel, "tot_neg_label")
         most_neg_pt = self.findChild(QLabel, "most_neg_pt")
+        state_info = self.findChild(QLabel, "label_state_info")
         tot_neg.setText("Total Negativity = " + str(self.grid.total_negativity()))
         most_neg_pt.setText("Most Negative Point = " +str(self.grid.most_neg_pt()))
+        state_info.setText(str(self.density_matrix))
 
     def change_matrix(self, new_matrix):
         self.density_matrix = new_matrix
@@ -146,15 +159,30 @@ class MyMainWindow(QMainWindow):
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         self.update_views(pt,pos)
 
+    def handle_change_size(self):
+        self.change_size(self.p_spinbox.value(),self.n_spinbox.value())
+        self.connect_signals(reconnect_wig = True)
     def handle_random_button(self):
         r = random_pure_state(self.p, self.n)
         self.change_matrix(r)
     def handle_zero_button(self):
         z = zero_state(self.p,self.n)
         self.change_matrix(z)
-    def handle_change_size(self):
-        self.change_size(self.p_spinbox.value(),self.n_spinbox.value())
-        self.connect_signals(reconnect_wig = True)
+    def handle_maximally_mixed_button(self):
+        m = maximally_mixed_state(self.p,self.n)
+        self.change_matrix(m)
+    def handle_superpositon_button(self):
+        s = super_position_state(self.p,self.n)
+        self.change_matrix(s)
+    def handle_superposition_alternating_button(self):
+        s = super_position_state_negatives(self.p,self.n)
+        self.change_matrix(s)
+    def handle_superposition_zero_negative_button(self):
+        s = super_position_zero_negative(self.p,self.n)
+        self.change_matrix(s)
+    def handle_cat_state_button(self):
+        c = cat_state(self.p,self.n)
+        self.change_matrix(c)
 
     def handle_p_spinbox_change(self,new_val):
         if new_val > self.p_spinbox_value:

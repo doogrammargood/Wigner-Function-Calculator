@@ -36,6 +36,9 @@ def super_position_state(p,n):
     #vector = np.array(weil_elementary(1,0,p)).dot(vector)
     #vector = np.matmul(weil_elementary( -1, 0,p),vector.T).T
     return matrix_from_list(vector)
+def super_position_zero_negative(p,n):
+    vector = [-1 if i ==0 else 1 for i in range(p**n)]
+    return matrix_from_list(vector)
 
 def super_position_state_negatives(p,n):
     #returns a superposition of all positions

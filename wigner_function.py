@@ -48,27 +48,6 @@ def phase_pt_elementary(x,p):
         return parity_operator(p)
     else:
         return weil_elementary( 2*x0,2*x1 , p ) @ parity_operator(p)
-        #return np.matmul(np.matmul(weil_elementary(x0,x1,p),parity_operator(p)), weil_elementary(-x0,-x1,p))
-
-def phase_ptA(point):
-    assert isinstance(point, point_of_plane)
-    if point.x.n > 0:
-        x_dual = finite_matrix.convert_to_dual(point.x)
-    else:
-        x_dual = point.x
-    x_coords = x_dual.coordinates
-    y_coords = point.y.coordinates
-    p = point.x.p
-    matrix = None
-    #matrix = np.kron(phase_pt_elementary( (x_coords[0],y_coords[0]), p), phase_pt_elementary( (x_coords[1],y_coords[1]), p))
-    for x,y in zip(x_coords, y_coords):
-        phs = np.matrix(phase_pt_elementary( (x,y), p))
-        if matrix is None:
-            matrix = phs
-        else:
-            matrix = np.matrix(np.kron( phs, matrix ))
-
-    return matrix
 
 def phase_pt_general(pt):
     if pt.x.n >1:
