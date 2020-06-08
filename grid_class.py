@@ -8,11 +8,11 @@ class grid_element(object_modified):
             assert len(matrix) == p**n
             self.p = p
             self.n = n
-            #self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
-            with multiprocessing.Pool(processes = 4) as poo:
-                self.values= poo.starmap(discrete_wig_fuct, [(point_of_plane((col,row)),matrix) for col, row in itertools.product(finite_field_element.list_elements(p,n), repeat = 2)] )
-            self.values = [self.values[i*(p**n):(i+1)*(p**n)] for i in range(p**n)]
-            self.values = [list(x) for x in zip(*self.values)]
+            self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
+            # with multiprocessing.Pool(processes = 4) as poo:
+            #     self.values= poo.starmap(discrete_wig_fuct, [(point_of_plane((col,row)),matrix) for col, row in itertools.product(finite_field_element.list_elements(p,n), repeat = 2)] )
+            # self.values = [self.values[i*(p**n):(i+1)*(p**n)] for i in range(p**n)]
+            # self.values = [list(x) for x in zip(*self.values)]
 
             self.marginals = {}
             self.record_marginals()

@@ -7,7 +7,7 @@ The main reference is Hudson's Theorem for Finite-Dimensional Quantum Systems by
   2.) Run 'python application.py' with python version 3.5.2
   3.) Install all the packages that the program complains about. These should be
     pyqt5 version 5.14.2 (it will complain if you try to use later versions)
-    pyqtgraph
+    pyqtgraph 0.10.0
     itertools
     pickle
     multiprocessing
@@ -45,7 +45,8 @@ The main reference is Hudson's Theorem for Finite-Dimensional Quantum Systems by
     The Most Negative Point is a point where the Wigner Function is minimized
     The Total Negativity is the sum of negative Wigner Function values.
 
-#---Planned Features---#
+#---Planned Features---#(TODO)
+  -Optimize calculating Wigner Function.
   -Allow for opening a pickled numpy matrix.
   -Implement Saving.
   -Allow hovering over elements of the bar graph to highlight the line in phase space.
