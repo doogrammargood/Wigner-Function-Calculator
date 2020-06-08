@@ -6,7 +6,7 @@ The main reference is Hudson's Theorem for Finite-Dimensional Quantum Systems by
   1.) Clone the repo with 'git clone .'
   2.) Run 'python application.py' with python version 3.5.2
   3.) Install all the packages that the program complains about. These should be
-    pyqt5
+    pyqt5 version 5.14.2 (it will complain if you try to use later versions)
     pyqtgraph
     itertools
     pickle
@@ -32,7 +32,7 @@ The main reference is Hudson's Theorem for Finite-Dimensional Quantum Systems by
   If you click on another point, the direction between the two points will be fixed. If you hover over a third point, the line will change to the parallel line through the point
   where you are hovering, and you'll see a different element of the distribution bar graph highlighted.
 
-  Currenty, Save and Edit in the toolbar don't do anything.
+  Currently, Save and Edit in the toolbar don't do anything.
 
   Representation:
     Elements of a finite field are represented as polynomials over a prime field, modulo a Conway Polynomial (which have been obtained from the GAP system).
@@ -46,13 +46,15 @@ The main reference is Hudson's Theorem for Finite-Dimensional Quantum Systems by
     The Total Negativity is the sum of negative Wigner Function values.
 
 #---Planned Features---#
--Allow for opening a pickled numpy matrix.
--Implement Saving.
--Allow hovering over elements of the bar graph to highlight the line in phase space.
--A second view of phase space with n pxp grids (so we interpret the density matrix as describing n p-level particles rather than 1 np level particle.)
--An editor for the density matrix:
-  -Implement Clifford Covariance
-  -Are there libraries to describe the clifford gates for qudits?
--A functional tab.
-  -Keep track of lines with weightings which are to be interpreted as a functional.
-  -Should integrate with Clifford Covariance, so functionals can be determined by a generating line and its orbit.
+  -Allow for opening a pickled numpy matrix.
+  -Implement Saving.
+  -Allow hovering over elements of the bar graph to highlight the line in phase space.
+  -It should say what the Conway Polynomial is somewhere.
+  -Finite Field Elements should be written in Latex
+  -A second view of phase space with n pxp grids (so we interpret the density matrix as describing n p-level particles rather than 1 np level particle.)
+  -An editor for the density matrix:
+    -Implement Clifford Covariance
+    -Are there libraries to describe the clifford gates for qudits?
+  -A functional tab.
+    -Keep track of lines with weightings which are to be interpreted as a functional.
+    -Should integrate with Clifford Covariance, so functionals can be determined by a generating line and its orbit.
