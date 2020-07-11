@@ -7,13 +7,14 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 5
+        self.p = 13
         self.n = 1
         #self.density_matrix = random_pure_state(self.p,self.n)
         #self.density_matrix = matrix_from_gross()
         #self.density_matrix = zero_state(self.p,self.n)
         #self.density_matrix = super_position_state(self.p,self.n)
         self.density_matrix = super_position_state_negatives(self.p,self.n)
+        #self.density_matrix = matrix_from_gross()
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
         self.clear_data()
     def clear_data(self):
@@ -93,9 +94,9 @@ class MyMainWindow(QMainWindow):
         for i in reversed(range(layout.count())):
             layout.itemAt(i).widget().setParent(None)
         w = WignerWidget(current.parent(), p=self.p, n=self.n, grid =self.grid)
-        layout.addWidget(w)
         w.setObjectName("wignerWidget")
         self.wig = w
+        layout.addWidget(w)
         #w.show()
 
     def keyPressEvent(self, e):
