@@ -1,6 +1,7 @@
 import pickle
 from finite_field_class import *
 from functools import reduce
+import numpy as np
 #finite_field_element.load_dual_vectors()
 def swap_positions(list, pos1, pos2):
     #from Geeks for Geeks
@@ -176,6 +177,14 @@ class finite_matrix(object):
     def to_prime_field_matrix(self):
         return finite_matrix([ [finite_matrix.from_finite_field_element(self.elements[i][j]) for j in range(len(self.elements[0]))] for i in range(len(self.elements))])
 
+
+    def character(self):
+        #from https://arxiv.org/pdf/1906.07230.pdf
+        assert len(self.elements)==len(self.elements[0])==1
+        lamb = self.elements[0][0]
+        assert lamb.n == 1
+        p = lamb.p
+        return np.e**(1j*2*np.pi*int(lamb)/p)
     @classmethod
     def identity(cls,size,p,n):
         return finite_matrix( [[ finite_field_element.one(p,n) if c ==r else finite_field_element.zero(p,n) for c in range(size)]for r in range(size)] )
