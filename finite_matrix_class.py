@@ -75,7 +75,7 @@ class finite_matrix(object):
             for item in list_representation:
                 self.elements.append([item])
             self.p = list_representation[0].p
-            self.n = list_representation[0].p
+            self.n = list_representation[0].n
         elif isinstance(list_representation[0][0], finite_field_element):
             #standard initialization: assume list_representation is a list of lists of finite field elements.
             self.elements = list_representation

@@ -31,6 +31,7 @@ def previous_prime(x): #returns the greatest prime leq than x
             return x
         x -= 1
 def legendre_symbol(a, n):#credit John D. Cook
+    #print(n,a)
     assert(n > a > 0 and n%2 == 1)
     t = 1
     while a != 0:

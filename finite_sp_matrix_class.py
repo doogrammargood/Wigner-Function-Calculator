@@ -1,4 +1,6 @@
 from finite_matrix_class import *
+from numpy_helpers import *
+from affine_plane_class import *
 class finite_sp_matrix(finite_matrix):
     def __init__(self, list_representation):
         if isinstance(list_representation, finite_matrix):
@@ -12,7 +14,25 @@ class finite_sp_matrix(finite_matrix):
             assert self.is_symplectic()
 
     def __mul__(self, other):
-        return finite_sp_matrix(super().__mul__(other))
+        if isinstance(other, point_of_plane):
+            x = other.x
+            y = other.y
+            assert len(self.elements[0])==  2 * x.n
+
+            vector = x.to_vector() + y.to_vector()
+            col_matrix = finite_matrix(vector)
+            col_matrix = self * col_matrix #This time, we are multiplying matrices!
+            row_matrix = col_matrix.transpose()
+            new_vector = row_matrix.elements[0]
+            new_x_vector = new_vector[:len(new_vector)//2]
+            new_y_vector = new_vector[len(new_vector)//2:]
+            new_x = finite_field_element.from_vector(new_x_vector)
+            new_y = finite_field_element.from_vector(new_y_vector)
+            return point_of_plane((new_x,new_y))
+        elif isinstance(other, finite_sp_matrix):
+            return finite_sp_matrix(super().__mul__(other))
+        else: #when other is a finite_matrix.
+            return super().__mul__(other)
     def __neg__(self):
         return finite_sp_matrix(super().__neg__())
     def transpose(self):
@@ -94,7 +114,9 @@ class finite_sp_matrix(finite_matrix):
         diag = []
         two_inv = finite_field_element([2],self.p,1).inverse()
         for ys in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
-            col_matrix = finite_matrix([[y] for y in ys])
+            yps = list(ys)
+            yps.reverse()
+            col_matrix = finite_matrix([[y] for y in yps])
             row_matrix = col_matrix.transpose()
             result = finite_matrix([[two_inv]]) * (row_matrix * A * col_matrix)
             diag.append(result.character())
@@ -108,19 +130,16 @@ class finite_sp_matrix(finite_matrix):
         permutation = [] #the result should be a permutation matrix.
         size = len(blocks[0][0].elements)
         def col_matrix_to_int(col_matrix):
-            to_return = 0
             vector = col_matrix.transpose().elements[0]
-            vector.reverse() #itertools counts by incrementing the last element most frequently.
             ffe = finite_field_element.from_vector(vector)
             return int(ffe)
 
         for ys in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
-            col_matrix = finite_matrix([[y] for y in ys])
-            # print(size)
-            # print(len(col_matrix.elements))
-            # print (len(C_inv_trans.elements[0]))
+            yps = list(ys)
+            yps.reverse()
+            col_matrix = finite_matrix([[y] for y in yps])
             result = C_inv_trans * col_matrix
-            permutation.append( col_matrix_to_int(col_matrix) )
+            permutation.append( col_matrix_to_int(result) )
         result = np.matrix([[1 if i == permutation[x] else 0 for x in range(self.p**size)] for i in range(self.p**size)])
         multiplier = legendre_symbol(int(C.determinant()), self.p)
         return multiplier*result
@@ -135,18 +154,21 @@ class finite_sp_matrix(finite_matrix):
         #size = len(blocks[0][0].elements)
         for ys in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
             current_col = []
-            row_y = finite_matrix(ys).transpose()
+            yps = list(ys)
+            yps.reverse()
+            row_y = finite_matrix(yps).transpose()
             guass_sum += (finite_matrix([[neg_two_inv]]) * (row_y * row_y.transpose()) ).character()
-            for yps in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
-                col_yp = finite_matrix(yps)
-                val = (finite_matrix([[neg_two_inv]]) * (row_y * col_yp) ).character()
+            for xs in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
+                xps = list(xs)
+                xps.reverse()
+                col_x = finite_matrix(xps)
+                val = (finite_matrix([[neg_two_inv]]) * (row_y * col_x) ).character()
                 current_col.append(val)
             to_return.append(current_col)
         to_return = np.matrix(to_return).T
-        return guass_sum * to_return
+        return (1/guass_sum) * to_return
 
     def weil_representation(self):
-        print(self)
         upper, lower, last = self.factorize()
         upper_blocks = upper.block_matrix_decompose()
 
@@ -155,13 +177,19 @@ class finite_sp_matrix(finite_matrix):
         assert up_factor1 * up_factor2 * low_factor1 * low_factor2 * low_factor3 * last == self
         weil_of_j = finite_sp_matrix(finite_matrix.symplectic_form(len(self.elements),self.p,1)).B_type_weil()
         weil_of_j_inv = np.linalg.inv(weil_of_j)
+
+        assert is_unitary(up_factor1.C_type_weil())
+        assert is_unitary(up_factor2.A_type_weil())
+        assert is_unitary(weil_of_j)
+        assert is_unitary(low_factor2.A_type_weil())
+        #assert is_unitary()
         if last == finite_matrix.symplectic_form(len(self.elements),self.p,1).inverse():
-            return up_factor1.C_type_weil() * up_factor2.A_type_weil() * weil_of_j * low_factor2.A_type_weil() * weil_of_j_inv * weil_of_j_inv
+            to_return = up_factor1.C_type_weil() * up_factor2.A_type_weil() * weil_of_j * low_factor2.A_type_weil() * weil_of_j_inv * weil_of_j_inv
         else:
-            return up_factor1.C_type_weil() * up_factor2.A_type_weil() * weil_of_j * low_factor2.A_type_weil() * weil_of_j_inv
-        # for f in factors:
-        #     print(f)
-        print("---")
+            to_return = up_factor1.C_type_weil() * up_factor2.A_type_weil() * weil_of_j * low_factor2.A_type_weil() * weil_of_j_inv
+        assert is_unitary(to_return)
+        return to_return
+
 
     #The following generators of the symplectic group come from https://www.math.wisc.edu/~shamgar/Small-Representations-Howe70th-Proceedings.pdf
     @classmethod
@@ -195,7 +223,7 @@ class finite_sp_matrix(finite_matrix):
         O = finite_field_element.zero(p,n)
         def part1():
             for A,B,C in itertools.product(finite_field_element.list_elements(p,n), finite_field_element.list_nonzero_elements(p,n), finite_field_element.list_elements(p,n)):
-                yield finite_sp_matrix([[I,O],[A,I]])*finite_matrix([[B,O],[O,B.inverse()]])*finite_matrix([[I,C],[O,I]])
+                yield finite_sp_matrix([[I,O],[A,I]])*finite_sp_matrix([[B,O],[O,B.inverse()]])*finite_sp_matrix([[I,C],[O,I]])
         def part2():
             for A,B in itertools.product(finite_field_element.list_elements(p,n), finite_field_element.list_nonzero_elements(p,n)):
                 yield finite_sp_matrix([[O,-B.inverse()],[B,A]])
@@ -214,5 +242,5 @@ class finite_sp_matrix(finite_matrix):
 #     print(y)
 #     assert not y.determinant().is_zero()
 
-for y in finite_sp_matrix.list_sl_2(3,1):
-    y.weil_representation()
+# for y in finite_sp_matrix.list_sl_2(3,1):
+#     y.weil_representation()

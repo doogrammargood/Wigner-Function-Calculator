@@ -49,18 +49,21 @@ def phase_pt_elementary(x,p):
     else:
         return weil_elementary( 2*x0,2*x1 , p ) @ parity_operator(p)
 
-def phase_pt_general(pt):
+def phase_pt_general(pt, multiparticle = False):
     if pt.x.n >1:
-        point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
+        if not multiparticle:
+            point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
+        else:
+            point = point_of_plane ( (pt.x, pt.y) )
     else:
         point = pt
     new_pt = point_of_plane((point.x + point.x, point.y + point.y))
     return weil_general(new_pt) @ parity_operator_general(point.x.p,point.x.n)
 
-def discrete_wig_fuct(x,mat):
+def discrete_wig_fuct(x,mat,multiparticle = False):
     p=x.x.p
     n=x.x.n
-    return np.real(np.trace( phase_pt_general(x) @ mat)) * (p**-n)
+    return np.real(np.trace( phase_pt_general(x, multiparticle) @ mat)) * (p**-n)
 
 def test_functions():
     p,n = 5,1
