@@ -35,7 +35,7 @@ class grid_element(object_modified):
         marginal = []
         for l in line.gen_parallel_lines():
             marginal.append(sum([self.get_value(pt) for pt in l.gen_points()]) )
-        assert(abs (sum(marginal) -1) < epsilon)
+        #assert(abs (sum(marginal) -1) < epsilon)
         return marginal
 
     def marginalize_grid(self, line):
@@ -45,10 +45,21 @@ class grid_element(object_modified):
         return self.marginals[str(cached_line)]
 
     def sum_line(self, line):
-        if line is None:
-            return None
-        #returns the sum of the values over the line
-        return np.sum([self.get_value(pt) for pt in line.gen_points()])
+        if line.isNone():
+            return 0
+        cached_line = line.parallel_through(point_of_plane.origin(self.p,self.n))
+        if not line.coefficients[0].is_zero():
+            x = int(line.coefficients[2]/line.coefficients[0])
+        else:
+            x = int(line.coefficients[2]/line.coefficients[1])
+        #assert self.marginals[str(cached_line)][x] == sum([self.get_value(pt) for pt in line.gen_points()])
+        return self.marginals[str(cached_line)][x]
+
+        # print("hii")
+        # if line is None:
+        #     return None
+        # #returns the sum of the values over the line
+        # return np.sum([self.get_value(pt) for pt in line.gen_points()])
 
     def total_negativity(self):
         p,n =self.p, self.n

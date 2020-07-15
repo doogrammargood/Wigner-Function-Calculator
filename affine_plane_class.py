@@ -92,6 +92,13 @@ class line_of_plane(object_modified):
             self.n = a.n
             self.coefficients = self.canonize_line()
 
+    def __eq__(self,other):
+        if all([self.coefficients[i]==other.coefficients[i] for i in range(3)]):
+            return True
+        else:
+            return False
+    def __neg__(self):
+        return line_of_plane((self.coefficients[0], self.coefficients[1], -self.coefficients[2]))
     def canonize_line(self):
         a, b, c, = self.coefficients
         if not a.is_zero():
@@ -103,7 +110,7 @@ class line_of_plane(object_modified):
         return (a,b,c)
 
     def parallel_through(self,pt):
-        #returns the line pararell to self through pt.
+        #returns the line parallel to self through pt.
         a, b, c, = self.coefficients
         c = a*pt.x + b*pt.y
         return line_of_plane((a,b,c))

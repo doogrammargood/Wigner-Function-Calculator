@@ -2,7 +2,8 @@ import itertools
 import numpy as np
 import math
 import traceback
-from sl_class import *
+#from sl_class import *
+from covariance_functions import *
 from wigner_function import *
 def is_unitary(m):
     return np.allclose(np.eye(m.shape[0]), np.matmul(m.H, m) )
@@ -60,12 +61,18 @@ def cat_state(p,n):
     vector = [1.0 if all_equal(finite_field_element.from_int(i,p,n).coordinates) else 0 for i in range(p**n)]
     return matrix_from_list(vector)
 
-def state_with_special_order(p, i=4):#assume n = 1 for now..
-    s = sl_matrix.gen_with_order(p,1).__next__()
-    unitary = unitary_from_sl(s,p)
+def state_from_sl(sl, index, p, n):
+    unitary = unitary_from_sl(sl, p, n)
+    assert(is_unitary(unitary))
     eig = np.linalg.eig(unitary)
-    eig = eig[1][:,i].T
-    return matrix_from_list(eig)
+    assert np.allclose(unitary @ eig[1][:,index], eig[0][index] * eig[1][:,index])
+    eig = eig[1][:,index]
+    #print(eig)
+    eig = np.matrix(eig)
+    assert np.allclose((unitary @ eig).H, eig.H @ unitary.H)
+    assert np.allclose(eig @ eig.H, unitary @ eig @ eig.H @ unitary.H)
+    return np.matmul(eig,eig.H)
+    #return matrix_from_list(eig)
 
 def matrix_from_gross():
     p=3
@@ -87,28 +94,33 @@ def matrix_from_gross():
     dense_matrix = 1/3*(a + b + c)
     return dense_matrix
 
-def unitary_from_sl(mat, p):
-    #Assumes p is prime.
-    alpha = int(mat.matrix[0][0])
-    beta = int(mat.matrix[0][1])
-    gamma = int(mat.matrix[1][0])
-    epsilon = int(mat.matrix[1][1])
-    omega = np.exp((2*np.pi*1j)/float(p))
-    tau = omega ** modinv(2,p)
-    if p==2:
-        tau = 1j
-    array = []
-    if beta == 0:
-        array = [[tau**(alpha*gamma*r**2) if (alpha*r)%p==c else 0 for c in range(p)] for r in range(p)]
-        return np.matrix(array)
-    else:
-        for j in range(p):
-            row = []
-            for k in range(p):
-                #print (alpha*k**2 - 2*j*k + epsilon*j**2)%p *(beta**-1)
-                row.append(p**-0.5 * tau** ( (alpha*k**2 - 2*j*k + epsilon*j**2) *(beta**-1) ))
-            array.append(row)
-        return np.matrix(array)
+def unitary_from_sl(sl, p, n):
+    sp = sl.sl_matrix_to_prime_matrix(p,n)
+    unitary = sp.weil_representation()
+    return unitary
+
+# def unitary_from_sl(mat, p): This is deprecated. It only handled prime matrices.
+#     #Assumes p is prime.
+#     alpha = int(mat.matrix[0][0])
+#     beta = int(mat.matrix[0][1])
+#     gamma = int(mat.matrix[1][0])
+#     epsilon = int(mat.matrix[1][1])
+#     omega = np.exp((2*np.pi*1j)/float(p))
+#     tau = omega ** modinv(2,p)
+#     if p==2:
+#         tau = 1j
+#     array = []
+#     if beta == 0:
+#         array = [[tau**(alpha*gamma*r**2) if (alpha*r)%p==c else 0 for c in range(p)] for r in range(p)]
+#         return np.matrix(array)
+#     else:
+#         for j in range(p):
+#             row = []
+#             for k in range(p):
+#                 #print (alpha*k**2 - 2*j*k + epsilon*j**2)%p *(beta**-1)
+#                 row.append(p**-0.5 * tau** ( (alpha*k**2 - 2*j*k + epsilon*j**2) *(beta**-1) ))
+#             array.append(row)
+#         return np.matrix(array)
 
 def test_states():
     epsilon = 10**-7

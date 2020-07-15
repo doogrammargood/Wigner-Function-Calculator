@@ -1,0 +1,1 @@
+[line_of_plane((a,b, finite_field_element.from_int(representative_marginal[index][0]))) for index in lines_in_this_direction] + [line_of_plane((a,b, -finite_field_element.from_int(representative_marginal[index][0]))) for index in lines_in_this_direction]

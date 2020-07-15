@@ -69,6 +69,8 @@ class polynomial_element(object):
     def __truediv__(self, other):
         #implements the division algorithm self = a*other + r; returns (a,r)
         self_copy = polynomial_element(self.coordinates, self.p, self.n)
+        # if self.n < other.degree(): #this should usually be the case. Maybe this will speed up calculations?
+        #     return (polynomial_element([0]*n, self.p, self.n), self_copy)
         degree_diff = self_copy.degree()-other.degree()
         quotient = polynomial_element([0]*(degree_diff+1), self.p, degree_diff + 1)
         if other.is_zero():
@@ -237,6 +239,15 @@ class finite_field_element(polynomial_element):
     def to_vector(self):
         #turns self into an list of length n whose elements are in the prime field.
         return [ finite_field_element.from_int(self.coordinates[i], self.p, 1) for i in range(self.n)]
+
+    def square_class(self):
+        if self.is_zero():
+            return 0
+        squares = [x*x for x in finite_field_element.list_elements(self.p,self.n)]
+        if self in squares:
+            return 1
+        else:
+            return -1
 
     @classmethod
     def from_vector(cls, vector):

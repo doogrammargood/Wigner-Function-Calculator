@@ -5,7 +5,7 @@ class finite_sp_matrix(finite_matrix):
     def __init__(self, list_representation):
         if isinstance(list_representation, finite_matrix):
             #promote finite matrix to sp finite_matrix
-            assert list_representation.is_symplectic()
+            #assert list_representation.is_symplectic()
             self.elements = list_representation.elements
             self.p=list_representation.p
             self.n=list_representation.n
@@ -17,18 +17,35 @@ class finite_sp_matrix(finite_matrix):
         if isinstance(other, point_of_plane):
             x = other.x
             y = other.y
-            assert len(self.elements[0])==  2 * x.n
+            if len(self.elements[0])==  2: #when self is an element of sl_2
+                col_matrix = finite_matrix([[x],[y]])
+                new_col_matrix = self * col_matrix
+                new_row_matrix = new_col_matrix.transpose()
+                new_x = new_row_matrix.elements[0][0]
+                new_y = new_row_matrix.elements[0][1]
+                return point_of_plane((new_x, new_y))
+            else: #for a prime field matrix.
+                vector = x.to_vector() + y.to_vector()
+                col_matrix = finite_matrix(vector)
+                col_matrix = self * col_matrix #This time, we are multiplying matrices!
+                row_matrix = col_matrix.transpose()
+                new_vector = row_matrix.elements[0]
+                new_x_vector = new_vector[:len(new_vector)//2]
+                new_y_vector = new_vector[len(new_vector)//2:]
+                new_x = finite_field_element.from_vector(new_x_vector)
+                new_y = finite_field_element.from_vector(new_y_vector)
+                return point_of_plane((new_x,new_y))
+        elif isinstance(other, line_of_plane):
+            #TODO: rewrite this in terms of the coefficients of line.
+            iter = other.gen_points()
+            pt1 = next(iter)
+            pt2 = next(iter)
+            new_pt1 = self * pt1
+            new_pt2 = self * pt2
+            return new_pt1.line_to(new_pt2)
 
-            vector = x.to_vector() + y.to_vector()
-            col_matrix = finite_matrix(vector)
-            col_matrix = self * col_matrix #This time, we are multiplying matrices!
-            row_matrix = col_matrix.transpose()
-            new_vector = row_matrix.elements[0]
-            new_x_vector = new_vector[:len(new_vector)//2]
-            new_y_vector = new_vector[len(new_vector)//2:]
-            new_x = finite_field_element.from_vector(new_x_vector)
-            new_y = finite_field_element.from_vector(new_y_vector)
-            return point_of_plane((new_x,new_y))
+
+
         elif isinstance(other, finite_sp_matrix):
             return finite_sp_matrix(super().__mul__(other))
         else: #when other is a finite_matrix.
@@ -40,6 +57,17 @@ class finite_sp_matrix(finite_matrix):
     def inverse(self):
         return finite_sp_matrix(super().inverse())
 
+    def orbit(self, other):
+        #assert isinstance(other, point_of_plane) or isinstance(other, line_of_plane)
+        #Yay polymorphism!
+        to_return = [other]
+        current = self*other
+        count =0
+        while not current == other:
+            to_return.append(current)
+            current = self * current
+        return to_return
+
     def block_matrix_decompose(self):
         #returns a list-of-lists of matrices [[A,B][C,D]]
         size = len(self.elements)
@@ -50,6 +78,19 @@ class finite_sp_matrix(finite_matrix):
         D_elements = [[self.elements[j][i] for i in range(block_size,size)] for j in range(block_size,size)]
         return [[finite_matrix(A_elements), finite_matrix(B_elements)],[finite_matrix(C_elements), finite_matrix(D_elements)]]
 
+    def sl_matrix_to_prime_matrix(self,p,n):
+        #takes an sl_2 matrix and produces the equivalent prime matrix.
+        if n == 1:
+            return self
+        prime_matrix = self.to_prime_field_matrix()
+        convert = finite_matrix.dual_basis_conversion[(p,n)]
+        I = finite_matrix.identity(n,p,1)
+        O = finite_matrix.zero(n,p,1)
+        factor1 = finite_matrix([[convert,O],[O,I]])
+        factor2 = finite_matrix([[convert.inverse(),O],[O,I]])
+        prime_matrix = factor1 * prime_matrix * factor2
+        prime_matrix = finite_sp_matrix(prime_matrix)
+        return prime_matrix
 
     def factorize(self):
         #TODO: Is this method totally general? Is it necessary that either C or D is invertible?
@@ -64,7 +105,7 @@ class finite_sp_matrix(finite_matrix):
         if D.determinant().is_zero():
             J = finite_sp_matrix.B_type_matrix(finite_matrix.identity(len(self.elements)//2,self.p,self.n))
             temp = self*J
-            if B.determinant().is_zero():
+            if C.determinant().is_zero():
                 print("problem")
             fact = temp.factorize()
             return fact[0], fact[1], J.inverse()
@@ -80,15 +121,16 @@ class finite_sp_matrix(finite_matrix):
             assert final_blocks[0][1].is_zero()
             upper = (factor_2*factor_1).inverse()
             #upper is triangular, lower is strictly triangular, and the last matrix is either J inverse or the identity
+            #print(lower)
             return upper, lower, finite_matrix.identity(len(self.elements),self.p,self.n)
 
     def factorize_upper(self):
         #assume self is a block upper triangular matrix
         blocks = self.block_matrix_decompose()
-        assert blocks[1][0].is_zero()
+        #assert blocks[1][0].is_zero()
         M = blocks[0][0]
         A = blocks[0][1]
-        assert not M.determinant().is_zero()
+        #assert not M.determinant().is_zero()
         factor1 = finite_sp_matrix.C_type_matrix(M)
         factor2 = finite_sp_matrix.A_type_matrix(M.inverse()*A)
         assert factor1 * factor2 == self
@@ -96,6 +138,7 @@ class finite_sp_matrix(finite_matrix):
 
     def factorize_lower(self):
         #assume self is a strictly block lower triangular matrix.
+        #print(self)
         blocks = self.block_matrix_decompose()
         assert blocks[0][1].is_zero()
         assert blocks[0][0]==blocks[1][1] #these should both be the identity.
@@ -106,10 +149,11 @@ class finite_sp_matrix(finite_matrix):
         return J, factor, J.inverse()
 
 
+
     def A_type_weil(self):
         blocks = self.block_matrix_decompose()
         A = blocks[0][1]
-        assert self == finite_sp_matrix.A_type_matrix(A)
+        #assert self == finite_sp_matrix.A_type_matrix(A)
         size = len(blocks[0][0].elements)
         diag = []
         two_inv = finite_field_element([2],self.p,1).inverse()
@@ -124,7 +168,7 @@ class finite_sp_matrix(finite_matrix):
 
     def C_type_weil(self):
         blocks = self.block_matrix_decompose()
-        assert blocks[0][1] == blocks[1][0]
+        #assert blocks[0][1] == blocks[1][0]
         C = blocks[0][0]
         C_inv_trans = C.inverse().transpose()
         permutation = [] #the result should be a permutation matrix.
@@ -140,29 +184,35 @@ class finite_sp_matrix(finite_matrix):
             col_matrix = finite_matrix([[y] for y in yps])
             result = C_inv_trans * col_matrix
             permutation.append( col_matrix_to_int(result) )
-        result = np.matrix([[1 if i == permutation[x] else 0 for x in range(self.p**size)] for i in range(self.p**size)])
+        result = np.matrix([[1 if row == permutation[column] else 0 for column in range(self.p**size)] for row in range(self.p**size)])
+
         multiplier = legendre_symbol(int(C.determinant()), self.p)
+        #multiplier = C.determinant().square_class()
+        #print(multiplier)
         return multiplier*result
 
     def B_type_weil(self):
         #only defined for the symplectic form over a prime field
-        assert self == finite_matrix.symplectic_form(len(self.elements),self.p,1)
-        neg_two_inv = -finite_field_element([2],self.p,1).inverse()
+        #assert self == finite_matrix.symplectic_form(len(self.elements),self.p,1)
+        neg_two_inv = -(finite_field_element([2],self.p,1).inverse())
         to_return = []
         guass_sum = 0
         size = len(self.elements)//2
+        B = self.block_matrix_decompose()[0][1]
         #size = len(blocks[0][0].elements)
         for ys in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
             current_col = []
             yps = list(ys)
             yps.reverse()
-            row_y = finite_matrix(yps).transpose()
-            guass_sum += (finite_matrix([[neg_two_inv]]) * (row_y * row_y.transpose()) ).character()
+            col_y = finite_matrix([[y] for y in yps])
+            row_y = col_y.transpose()
+            guass_sum += (finite_matrix([[neg_two_inv]]) * (row_y * B * col_y) ).character()
             for xs in itertools.product(finite_field_element.list_elements(self.p,1), repeat = size):
                 xps = list(xs)
                 xps.reverse()
-                col_x = finite_matrix(xps)
-                val = (finite_matrix([[neg_two_inv]]) * (row_y * col_x) ).character()
+                col_x = finite_matrix([[x] for x in xps])
+                #val = (finite_matrix([[neg_two_inv]]) * (row_y * B * col_x) ).character()
+                val = ( (row_y * B * col_x) ).character()
                 current_col.append(val)
             to_return.append(current_col)
         to_return = np.matrix(to_return).T
@@ -173,23 +223,42 @@ class finite_sp_matrix(finite_matrix):
         upper_blocks = upper.block_matrix_decompose()
 
         up_factor1, up_factor2 = upper.factorize_upper()
+        assert up_factor1 * up_factor2 == upper
+        #print(up_factor1, up_factor2)
         low_factor1, low_factor2, low_factor3 = lower.factorize_lower()
+        # print("ss")
+        # print(low_factor1, low_factor2, low_factor3)
         assert up_factor1 * up_factor2 * low_factor1 * low_factor2 * low_factor3 * last == self
-        weil_of_j = finite_sp_matrix(finite_matrix.symplectic_form(len(self.elements),self.p,1)).B_type_weil()
-        weil_of_j_inv = np.linalg.inv(weil_of_j)
-
+        J = finite_sp_matrix(finite_matrix.symplectic_form(len(self.elements),self.p,1))
+        assert low_factor1 == J
+        assert low_factor3 == J.inverse()
+        weil_of_j = J.B_type_weil()
+        #weil_of_j_inv = np.linalg.inv(weil_of_j)
+        weil_of_j_inv = weil_of_j.H
+        #assert np.allclose(np.eye(5,5), weil_of_j @ weil_of_j_inv)
+        # print(weil_of_j @ weil_of_j)
+        # print((J*J).C_type_weil())
+        assert np.allclose((J*J).C_type_weil(),weil_of_j @ weil_of_j)
+        #print("pass")
+        #assert np.allclose(np.eye(5,5),  weil_of_j @ weil_of_j @ weil_of_j @ weil_of_j)
+        #print (J*J)
         assert is_unitary(up_factor1.C_type_weil())
         assert is_unitary(up_factor2.A_type_weil())
         assert is_unitary(weil_of_j)
         assert is_unitary(low_factor2.A_type_weil())
         #assert is_unitary()
-        if last == finite_matrix.symplectic_form(len(self.elements),self.p,1).inverse():
-            to_return = up_factor1.C_type_weil() * up_factor2.A_type_weil() * weil_of_j * low_factor2.A_type_weil() * weil_of_j_inv * weil_of_j_inv
+        if last == J.inverse():
+            #print("occurs")
+            to_return = up_factor1.C_type_weil() @ up_factor2.A_type_weil() @ weil_of_j @ low_factor2.A_type_weil() @ weil_of_j_inv @ weil_of_j_inv
         else:
-            to_return = up_factor1.C_type_weil() * up_factor2.A_type_weil() * weil_of_j * low_factor2.A_type_weil() * weil_of_j_inv
-        assert is_unitary(to_return)
+            #print("echo")
+            to_return = up_factor1.C_type_weil() @ up_factor2.A_type_weil() @ weil_of_j @ low_factor2.A_type_weil() @ weil_of_j_inv
+        #assert is_unitary(to_return)
         return to_return
 
+    @classmethod
+    def identity(cls, size,p,n):
+        return finite_sp_matrix(finite_matrix.identity(size,p,n))
 
     #The following generators of the symplectic group come from https://www.math.wisc.edu/~shamgar/Small-Representations-Howe70th-Proceedings.pdf
     @classmethod
@@ -233,7 +302,7 @@ class finite_sp_matrix(finite_matrix):
     @classmethod
     def list_sp(cls, size, p, n):
         #TODO: finish this method.
-        assert size % 2 == 0
+        #assert size % 2 == 0
         for A0 in finite_matrix.list_symmetric_matrices(size//2,p,n):
             for C in finite_matrix.list_invertible_matrices(size//2,p,n):
                 pass

@@ -87,11 +87,11 @@ class finite_matrix(object):
             self.p = list_representation[0][0].p
             self.n = list_representation[0][0].n
 
-            for row in range(len(list_representation) - 1):
-                for col in range(len(list_representation[0]) - 1):
+            # for row in range(len(list_representation) - 1):
+            #     for col in range(len(list_representation[0]) - 1):
                     #check shape of blocks
-                    assert len(list_representation[row][col].elements[0]) == len(list_representation[row+1][col].elements[0])
-                    assert len(list_representation[row][col].elements) == len(list_representation[row][col+1].elements)
+                    #assert len(list_representation[row][col].elements[0]) == len(list_representation[row+1][col].elements[0])
+                    #assert len(list_representation[row][col].elements) == len(list_representation[row][col+1].elements)
             self.elements = []
             new_row = []
             for row in range(len(list_representation) ):
@@ -112,7 +112,7 @@ class finite_matrix(object):
 
     def __mul__(self, other):
         w =len(self.elements[0])
-        assert w == len(other.elements)
+        #assert w == len(other.elements)
         to_return = finite_matrix([[ reduce( (lambda x,y: x+y), [self.elements[c][k]*other.elements[k][r] for k in range(w)]) for c in range(len(self.elements))]for r in range(len(other.elements[0]))])
         return to_return.transpose()
 
@@ -123,7 +123,7 @@ class finite_matrix(object):
     def order(self):
         counter = 1
         curr = self.copy()
-        assert len(self.elements)==len(self.elements[0])
+        #assert len(self.elements)==len(self.elements[0])
         I = finite_matrix.identity(len(self.elements),self.p,self.n)
         while(not curr == I):
             curr = curr*self
@@ -157,7 +157,7 @@ class finite_matrix(object):
         return s
 
     def column_matrix_to_vector(self):
-        assert len(self.elements[0])==1
+        #assert len(self.elements[0])==1
         return self.transpose().elements[0]
 
     def is_symplectic(self):
@@ -180,11 +180,12 @@ class finite_matrix(object):
 
     def character(self):
         #from https://arxiv.org/pdf/1906.07230.pdf
-        assert len(self.elements)==len(self.elements[0])==1
+        #assert len(self.elements)==len(self.elements[0])==1
+        #Assumes the matrix is 1x1
         lamb = self.elements[0][0]
-        assert lamb.n == 1
+        #assert lamb.n == 1
         p = lamb.p
-        return np.e**(1j*2*np.pi*int(lamb)/p)
+        return np.e**(1j*2*np.pi*int(lamb.trace())/p)
     @classmethod
     def identity(cls,size,p,n):
         return finite_matrix( [[ finite_field_element.one(p,n) if c ==r else finite_field_element.zero(p,n) for c in range(size)]for r in range(size)] )
@@ -195,7 +196,7 @@ class finite_matrix(object):
 
     @classmethod
     def symplectic_form(cls,size,p,n):
-        assert size%2==0
+        #assert size%2==0
         I = finite_matrix.identity(size//2,p,n)
         O = finite_matrix.zero(size//2,p,n)
         to_return = finite_matrix([[O,I],[-I,O]])
@@ -268,6 +269,8 @@ class finite_matrix(object):
 
     @classmethod
     def convert_to_dual(cls, ffe):
+        # if ffe.n == 1:
+        #     return ffe
         col_mat = cls.dual_basis_conversion[(ffe.p,ffe.n)] * finite_matrix(ffe)
         return finite_field_element.from_vector(col_mat.column_matrix_to_vector())
 
@@ -279,7 +282,7 @@ class finite_matrix(object):
         pivot = None
         h = len(elts)
         w = len(elts[0])
-        assert w==h
+        #assert w==h
         size = w
         iden = finite_matrix.identity(size,self.p,self.n).elements
         x_index = 0 #No columns have been cleared
@@ -299,7 +302,7 @@ class finite_matrix(object):
 
             elts, iden = clear_column(elts, iden, top, x_index)
             top += 1
-        assert finite_matrix(elts) == finite_matrix.identity(size, self.p,self.n)
+        #assert finite_matrix(elts) == finite_matrix.identity(size, self.p,self.n)
         return finite_matrix(iden)
 
     def determinant(self):
@@ -310,7 +313,7 @@ class finite_matrix(object):
         #top = 0
         det = finite_field_element.one(self.p,self.n)
         #print(size)
-        assert len(elts[0])==size #determinant is only defined for square matrices
+        #assert len(elts[0])==size #determinant is only defined for square matrices
         for x_index in range(size):
             pivot = find_nonzero(elts,x_index,size,x_index)
             if pivot is None:
@@ -330,7 +333,7 @@ class finite_matrix(object):
         elts = self.elements.copy()
         pivot = None
         size = len(elts)
-        assert len(elts[0])>=size
+        #assert len(elts[0])>=size
         current_row = 0
         permute = [i for i in range(len(elts))] #initially, the identity.
         for x_index in range(len(elts[0])):
