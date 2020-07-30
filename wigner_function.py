@@ -53,6 +53,7 @@ def phase_pt_general(pt, multiparticle = False):
     if pt.x.n >1:
         if not multiparticle:
             point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
+            #point = point_of_plane ( (pt.x, finite_matrix.convert_to_dual(pt.y)) )
         else:
             point = point_of_plane ( (pt.x, pt.y) )
     else:
@@ -64,6 +65,44 @@ def discrete_wig_fuct(x,mat,multiparticle = False):
     p=x.x.p
     n=x.x.n
     return np.real(np.trace( phase_pt_general(x, multiparticle) @ mat)) * (p**-n)
+
+def discrete_wig_fuct_pure_state(x,vect,multiparticle = False):
+    vect = np.array(vect)[0]
+    p=x.x.p
+    n=x.x.n
+    d=len(vect)
+    if not multiparticle and n > 1:
+        pt = point_of_plane ( (finite_matrix.convert_to_dual(x.x), x.y) )
+    else:
+        pt = x
+    total = 0
+    #two_inv = (d+1)/2
+    two_inv = finite_field_element([(p+1)//2],p,1)
+    x_vec = pt.x.to_vector()
+    y_vec = pt.y.to_vector()
+    def vec_to_int(vect):
+        tot = 0
+        p = vect[0].p
+        for i,v in enumerate(vect):
+            tot += int(v)*p**i
+        return tot
+    for zeta in finite_field_element.list_elements(p,n):
+        zeta_vec = zeta.to_vector()
+        phase = np.e**(-2*np.pi*1j*int(reduce(lambda a,b: a+b, [a*b for a,b in zip(zeta_vec, x_vec)]))/p )
+        factor1 = np.conj(vect[vec_to_int([a+two_inv*b for a,b in zip(y_vec, zeta_vec)])])
+        factor2 = vect[vec_to_int([a-two_inv*b for a,b in zip(y_vec, zeta_vec)])]
+        total += phase * factor1 *factor2
+    to_return = total/d
+    #assert np.allclose(to_return, np.real(to_return))
+    return np.real(to_return)
+def pure_state_from_density_matrix(mat):
+    assert np.allclose(mat @ mat, mat)
+    w,v = np.linalg.eigh(mat)
+    i = len(v)-1
+    vect= v[:,i].H
+    #print(vect)
+    assert np.allclose(np.matrix(vect).H @ np.matrix(vect), mat)
+    return vect
 
 def test_functions():
     p,n = 5,1

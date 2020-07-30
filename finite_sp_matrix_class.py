@@ -13,6 +13,9 @@ class finite_sp_matrix(finite_matrix):
             super().__init__(list_representation)
             assert self.is_symplectic()
 
+    def __pow__(self,exp):
+        return finite_sp_matrix(super().__pow__(exp))
+
     def __mul__(self, other):
         if isinstance(other, point_of_plane):
             x = other.x
@@ -95,7 +98,6 @@ class finite_sp_matrix(finite_matrix):
     def factorize(self):
         #TODO: Is this method totally general? Is it necessary that either C or D is invertible?
         #Maybe this can be deduced from the block-matrix inverse.
-
         blocks = self.block_matrix_decompose()
         A=blocks[0][0]
         B=blocks[0][1]
@@ -138,7 +140,6 @@ class finite_sp_matrix(finite_matrix):
 
     def factorize_lower(self):
         #assume self is a strictly block lower triangular matrix.
-        #print(self)
         blocks = self.block_matrix_decompose()
         assert blocks[0][1].is_zero()
         assert blocks[0][0]==blocks[1][1] #these should both be the identity.
@@ -219,6 +220,7 @@ class finite_sp_matrix(finite_matrix):
         return (1/guass_sum) * to_return
 
     def weil_representation(self):
+        #print(self)
         upper, lower, last = self.factorize()
         upper_blocks = upper.block_matrix_decompose()
 
@@ -281,7 +283,7 @@ class finite_sp_matrix(finite_matrix):
 
     @classmethod
     def C_type_matrix(cls, C):
-        assert not C.determinant().is_zero()
+        #assert not C.determinant().is_zero()
         size = len(C.elements)
         O = finite_matrix.zero(size, C.p, C.n)
         return finite_sp_matrix([[C,O],[O, C.inverse().transpose()]])
@@ -298,6 +300,22 @@ class finite_sp_matrix(finite_matrix):
                 yield finite_sp_matrix([[O,-B.inverse()],[B,A]])
         return itertools.chain(part1(),part2())
 
+    def check_order(self, n):
+        if (self ** n).is_identity():
+            for x in maximal_proper_factors(n):
+                if (self**x).is_identity():
+                    return False
+            return True
+        else:
+            return False
+    def is_identity(self):
+        return self == finite_sp_matrix.identity(len(self.elements), self.p, self.n)
+    @classmethod
+    def get_element_of_sl_2_from_field_extension(cls,p,n):
+        m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
+        mat = finite_matrix.from_finite_field_element(m, new_n = n)
+        #print (len(mat.elements))
+        return finite_sp_matrix(mat ** (p**n-1))
 
     @classmethod
     def list_sp(cls, size, p, n):
@@ -306,7 +324,16 @@ class finite_sp_matrix(finite_matrix):
         for A0 in finite_matrix.list_symmetric_matrices(size//2,p,n):
             for C in finite_matrix.list_invertible_matrices(size//2,p,n):
                 pass
+# p,n =3,2
+# count = 0
+# for x in finite_sp_matrix.list_sl_2(p,n):
+#     if x.check_order(p**n + 1):
+#         assert x.order()==p**n+1
+#         count += 1
+# print(count)
 
+# for x in finite_sp_matrix.list_sl_2_from_field_extension(3,2):
+#     print(x)
 # for y in finite_matrix.list_invertible_matrices(4,3,2):
 #     print(y)
 #     assert not y.determinant().is_zero()

@@ -1,6 +1,7 @@
 #from sage.all import *
 import itertools
 from num_theory_functions import *
+from functools import reduce
 import pickle
 
 class polynomial_element(object):
@@ -123,8 +124,6 @@ class finite_field_element(polynomial_element):
     @classmethod
     def from_int(cls, a, p, n):
         assert a < p**n
-        def dig(a,p,i):
-            return int(((a%(p**(i+1)) )- (a%(p**(i)) ) ) / p**i)
         coff = [ dig(a,p,i)  for i in range(n)]
         return finite_field_element(coff, p, n)
 
@@ -161,11 +160,16 @@ class finite_field_element(polynomial_element):
         temp.n = self.n
         return finite_field_element(temp)
 
-    def __pow__(self, exp):
-        #TODO: fast exponentiation
-        current = finite_field_element.one(self.p,self.n)
-        for i in range(exp):
-            current = current * self
+    def __pow__(self,exp):
+        if exp == 0:
+            return finite_field_element.one(self.p,self.n)
+        base_2_exp = to_base(exp,2)[:-1]
+        base_2_exp.reverse()
+        current = self.copy()
+        for bit in base_2_exp:
+            current = current * current
+            if bit == 1:
+                current = current * self
         return current
 
     def __add__(self, other):
@@ -211,10 +215,27 @@ class finite_field_element(polynomial_element):
         x = self.copy()
         x = self * x
         count = 2
-        while not x == self:
-            x = x*self
+        while not x.is_one():
+            x = self * x
             count += 1
         return count
+
+    def is_mul_generator(self):
+        #determines if self generates the multiplicative group by testing the order of the maximal proper factors of self.
+        mul_group_order = self.p**self.n - 1
+        for x in maximal_proper_factors(mul_group_order):
+            if (self**x).is_one():
+                return False
+        return True
+
+    # def root(self, r):
+    #     assert not self.is_zero()
+    #     if self.is_one():
+    #         return(self)
+    #     for x in finite_field_element.list_nonzero_elements(self.p,self.n):
+    #         print(x)
+    #         if x**r == self:
+    #             return x
 
     def trace(self):
         tot = finite_field_element.zero(self.p,self.n)
@@ -236,8 +257,21 @@ class finite_field_element(polynomial_element):
                     break
             if satisfies:
                 return d
+
+    def discrete_log(self):
+        #Returns i such that [0,1,0,0..]**i == self
+        current = self
+        counter = 1
+        if not self.is_zero():
+            while not current == finite_field_element.identity(self.p,self.n):
+                current = self * current
+                counter += 1
+            return counter
+        else:
+            print("log of zero undefined")
+
     def to_vector(self):
-        #turns self into an list of length n whose elements are in the prime field.
+        #turns self into a list of prime field elements. See finite_matrix for a generalization to subfields.
         return [ finite_field_element.from_int(self.coordinates[i], self.p, 1) for i in range(self.n)]
 
     def square_class(self):
@@ -279,11 +313,11 @@ class finite_field_element(polynomial_element):
         return (finite_field_element([0]*n, p, n))
 
     @classmethod
-    def generator(cls,p,n):
-        #returns a generator.
-        for x in finite_field_element.list_elements(p,n):
-            if x.order() == p**n:
-                return x
+    def mul_generator(cls,p,n):
+        #returns a generator for the multiplicative generators of the group_element
+        for x in finite_field_element.list_nonzero_elements(p,n):
+            if x.is_mul_generator():
+                yield x
 
     @classmethod
     def load_conway_polynomials(cls):
@@ -351,4 +385,3 @@ def prepare_dual_basis():
     pickle.dump(finite_field_element.dual_basis, file)
     #This will pickle an object which will contain a dictionary for the dual basis.
     #pass
-#prepare_dual_basis()

@@ -8,11 +8,9 @@ def top_lines_from_direction(grid, direction, percent, from_sl = False):
     a,b = direction.coefficients[0], direction.coefficients[1]
     marginal = grid.marginalize_grid(direction)
     # for line in direction.gen_parallel_lines():
-    #     print(line)
-    #     #assert grid.sum_line(line)==grid.sum_line(-line)
-    #     print("assertion passed")
+    #     assert np.allclose(grid.sum_line(line),grid.sum_line(-line))
+    # print("assertion passed")
     if from_sl:
-        print(marginal)
         marginal = enumerate(marginal)
         representative_marginal = []
         for c, value in marginal:
@@ -114,9 +112,9 @@ class functional_on_grid(object_modified):
         rep_direction2 = None
         orbit = []
         for direction in point_of_plane.origin(p,n).gen_lines():
-            print(direction)
+            #print(direction)
             assert np.allclose(grid.sum_line(direction), grid.sum_line(sl.inverse()*direction))
-            print("passed assertion")
+            #print("passed assertion")
             if not direction in orbit:
                 if len(orbit) == 0:
                     orbit = sl.orbit(direction)
@@ -137,28 +135,64 @@ class functional_on_grid(object_modified):
         return functional_on_grid(dict_of_lines,p,n)
 
 
-def sandbox_test():
-    p,n= 5,1
-    stop = False
-    #output_template =
-    for sl in [s for s in finite_sp_matrix.list_sl_2(p,n) if s.order()==p**n+1]:
+def test_sl_from_extension():
+    #p,n = 7,2
+    #i=0
+    p_n_pairs = [(3,2), (5,2), (7,2), (11,2), (3,3), (5,3), (7,3), (3,4)]
+    percents = [0.001, 0.05, 0.1, 0.2, 0.4, 0.5, 0.75]
+    print("p, n, i, percent, q_val, c_val, ratio, numlines")
+    for p,n in p_n_pairs:
+        sl = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
         for i in range(p**n):
             density_matrix = state_from_sl(sl,i,p,n)
-            grid = grid_element(density_matrix, p, n)
-            for percent in [0.5]:
-            #for percent in [0.001, 0.02, 0.1, 0.25]:
-                functional1 = functional_on_grid.functional_from_sl(sl, grid, percent)
-                functional2 = functional_on_grid.top_outcomes(grid, percent)
-                print (functional1 * grid)
-                print (functional1.evaluate_classical(grid)[1])
-                print(len(list(functional1.list_lines())))
-                print ("-")
-                print (functional2 * grid)
-                print (functional2.evaluate_classical(grid)[1])
-                print(len(list(functional2.list_lines())))
-                print("!!!!")
-            #print (grid.total_negativity())
-            #functional = functional_on_grid.top_outcomes(grid, 0.00001)
+            grid = grid_element(density_matrix, p, n, pure = True)
+            total_negativity = grid.total_negativity()
+            for percent in percents:
+                functional = functional_on_grid.functional_from_sl(sl, grid, percent)
+                q_val = functional * grid
+                c_val = functional.evaluate_classical(grid)[1]
+                num_lines = len(list(functional.list_lines()))
+                print([p, n, i, percent, q_val, c_val, q_val/c_val, num_lines, total_negativity])
+
+    # print (functional * grid)
+    # print(functional.evaluate_classical(grid))
+def sandbox_test():
+    p,n = 7,2
+    x = finite_field_element([0,1,0,0], p, 2*n)
+    #y = finite_field_element([0,1], 3, 2)
+    pow = (p**(2*n) -1) /(p**n - 1)
+    y=x**pow
+    print(pow)
+    print(y)
+    #print(finite_field_element.conway_polynomial[(p,n)])
+    #two = finite_field_element([2,0,0,0],5,4)
+    #print(two + two * x**10 + x**20)
+    #print(y**2)
+    #print(x.is_mul_generator())
+    #print(y.is_mul_generator())
+    # x = finite_field_element.mul_generator(7,6)
+    # print(next(x).order())
+
+    # p_n_pairs = [(7,2)]
+    # percents = [0.001, 0.05, 0.1, 0.2, 0.4, 0.5, 0.75]
+    # print("sl_number, i, q_val, c_val, num_lines")
+    # #output_template =
+    # for p,n in p_n_pairs:
+    #     sl_number = 0
+    #     for sl in [s for s in finite_sp_matrix.list_sl_2(p,n) if s.check_order(p**n+1)]:
+    #         for i in range(p**n):
+    #             density_matrix = state_from_sl(sl,i,p,n)
+    #             grid = grid_element(density_matrix, p, n)
+    #             for percent in percents:
+    #             #for percent in [0.001, 0.02, 0.1, 0.25]:
+    #                 functional1 = functional_on_grid.functional_from_sl(sl, grid, percent)
+    #                 #functional2 = functional_on_grid.top_outcomes(grid, percent)
+    #
+    #                 q_val = functional1 * grid
+    #                 c_val = functional1.evaluate_classical(grid)[1]
+    #                 num_lines = len(list(functional1.list_lines()))
+        #                 print([p, n, sl_number, i, percent, q_val, c_val, num_lines])
+    #         sl_number += 1
 
 
 
@@ -185,5 +219,6 @@ def sl_decompose_test():
         #functional = functional_on_grid.functional_from_sl(sl, grid, 0.1)
     #I = finite_matrix.identity(n,p,1)
 #sl_decompose_test()
-sandbox_test()
+#sandbox_test()
+test_sl_from_extension()
 #profile.run('sandbox_test()')

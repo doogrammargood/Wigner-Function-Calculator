@@ -145,6 +145,17 @@ class finite_matrix(object):
                     return False
         return True
 
+    def __pow__(self,exp):
+        if exp == 0:
+            return finite_matrix.identity(self.p,self.n)
+        base_2_exp = to_base(exp,2)[:-1]
+        base_2_exp.reverse()
+        current = self
+        for bit in base_2_exp:
+            current = current * current
+            if bit == 1:
+                current = current * self
+        return current
     def __str__(self):
         s = "["
         for row in range(len(self.elements)):
@@ -175,7 +186,10 @@ class finite_matrix(object):
         return True
 
     def to_prime_field_matrix(self):
+        big_n = len(self.elements) * self.n
+        #M = embedding_matrix(self.p, big_n,self.n)
         return finite_matrix([ [finite_matrix.from_finite_field_element(self.elements[i][j]) for j in range(len(self.elements[0]))] for i in range(len(self.elements))])
+        #return M * finite_matrix([ [finite_matrix.from_finite_field_element(self.elements[i][j]) for j in range(len(self.elements[0]))] for i in range(len(self.elements))]) * M.inverse()
 
 
     def character(self):
@@ -203,17 +217,30 @@ class finite_matrix(object):
         return to_return
 
     @classmethod
-    def from_finite_field_element(cls, ffe):
-        #defines a square matrix over the prime field.
+    def from_finite_field_element(cls, ffe, new_n = 1):
+        #defines a square matrix. Default create over prime
         #As opposed to the constructor method in __init__ which creates a column matrix
         n=ffe.n
         p=ffe.p
-        basis_elements = [finite_field_element([1 if i ==j else 0 for i in range(n)],p,n) for j in range(n)]
-        vects = []
-        for b in basis_elements:
-            vects.append( (ffe*b).to_vector() )
-        M = finite_matrix(vects)
-        return M.transpose()
+        if new_n ==1:
+            basis_elements = [finite_field_element([1 if i == j else 0 for i in range(n)],p,n) for j in range(n)[::new_n]]
+            vects = []
+            for b in basis_elements:
+                vects.append( (ffe*b).to_vector() )
+            M = finite_matrix(vects)
+            return M.transpose()
+        else:
+
+            M = embedding_matrix(p,n,new_n)
+            assert n %new_n == 0
+            d = n//new_n
+            basis_elements = [finite_matrix(finite_field_element([1 if i == j else 0 for i in range(n)],p,n)) for j in range(n)[::new_n]]
+            basis_elements = [M.inverse()*finite_matrix.from_finite_field_element(ffe)*M*b for b in basis_elements]
+            output_basis_elements = [[finite_field_element.from_vector(basis_elements[row].transpose().elements[0][col:col+new_n]) for col in range(n)[::new_n]]for row in range(d)]
+            #idk row and col look switched in the line below, but it seems to work.
+            return finite_matrix([[output_basis_elements[col][row] for col in range(d)] for row in range(d)])
+
+
 
     @classmethod
     def list_square_matrices(cls, m,p,n):
@@ -358,6 +385,79 @@ class finite_matrix(object):
             return finite_matrix(elts), permute
         else:
             return finite_matrix(elts)
+
+def embedding_matrix(p, big_n, small_n):
+    #returns a big_n x big_n matrix over the prime field which embeds vectors over the field p**small_n  into the bigger field.
+    assert big_n % small_n == 0
+    d = big_n//small_n
+    c = (p**big_n-1) // (p**(small_n)-1)
+    x = finite_field_element([1 if index == 1 else 0 for index in range(big_n)], p,big_n)
+    y = x**c
+    vects_within_anew_ffe = []
+    total_vectors = []
+    for i in range(small_n):
+        vects_within_anew_ffe.append(y**i)
+    for i in range(d):
+        total_vectors.extend([(x**i * v).to_vector() for v in vects_within_anew_ffe])
+    M = finite_matrix(total_vectors)
+    M = M.transpose()
+    return M
+
+def finite_field_to_list(ffe, new_n):
+    p,n = ffe.p, ffe.n
+    M = embedding_matrix(p,n,new_n)
+    target_vector = finite_matrix(ffe.to_vector())
+    list_of_primes = (M.inverse()*target_vector).transpose().elements[0]
+    print(list_of_primes)
+    return [finite_field_element.from_vector(list_of_primes[s:s+new_n]) for s in range(n)[::new_n]]
+
+def finite_field_from_list(list_of_ffe):
+    d = len(list_of_ffe)
+    p, small_n = list_of_ffe[0].p, list_of_ffe[0].n
+    n = small_n * d
+    M = embedding_matrix(p,n,small_n)
+    list_of_ffe_over_prime = []
+    for l in list_of_ffe:
+        list_of_ffe_over_prime.extend(l.to_vector())
+
+    col_vec = M*finite_matrix(list_of_ffe_over_prime)
+    list_of_primes = col_vec.transpose().elements[0]
+    return finite_field_element.from_vector(list_of_primes)
+
+
+def test_finite_field_to_list():
+    ffe = finite_field_element([1,2,0,1], 3, 4)
+    new_n = 2
+    returned = finite_field_to_list(ffe, new_n)
+    print(returned[0],returned[1])
+
+    ffe2 = ffe+ffe
+    returned2 = finite_field_to_list(ffe2, new_n)
+    print(returned2[0], returned2[1])
+    print(finite_field_from_list(returned2))
+
+    gge = finite_field_element([1,0,0,1], 3, 4)
+    print(finite_matrix.from_finite_field_element(gge, new_n =2))
+
+#test_finite_field_to_list()
+def test_matrix_from_ffe():
+    ffe = finite_field_element([1,2,0,1], 3, 4)
+    gge = finite_field_element([1,0,0,1], 3, 4)
+    print(finite_field_to_list(gge*ffe,new_n =2))
+    for x in finite_field_to_list(gge*ffe,new_n =2):
+        print(x)
+    print("wop")
+    mat_gge = finite_matrix.from_finite_field_element(gge, new_n =2)
+    mat_ffe = finite_matrix.from_finite_field_element(ffe, new_n =2)
+    mat_both = finite_matrix.from_finite_field_element(gge*ffe, new_n =2)
+    M = embedding_matrix(3,4,2)
+    print((mat_gge*mat_ffe).to_prime_field_matrix())
+    print(mat_both.to_prime_field_matrix())
+    print(finite_matrix.from_finite_field_element(gge) * finite_matrix.from_finite_field_element(ffe))
+    # ffv = finite_matrix(finite_field_to_list(ffe, new_n = 2))
+    # print(mat_gge)
+    # print(mat*ffv)
+#test_matrix_from_ffe()
 # one = finite_field_element.one(5,2)
 # zero = finite_field_element.zero(5,2)
 # M = finite_matrix([ [one, zero, one],

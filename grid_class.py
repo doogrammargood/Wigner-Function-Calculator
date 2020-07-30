@@ -1,14 +1,20 @@
 from wigner_function import *
 import multiprocessing
 from density_matrix_functions import *
+import profile
+#finite_matrix.load_dual_basis_matrices()
 class grid_element(object_modified):
-    def __init__(self, matrix, p, n, compute_fresh = True, multiparticle = False):
+    def __init__(self, matrix, p, n, compute_fresh = True, multiparticle = False, pure = False):
         mat_in = matrix.copy()
         if compute_fresh:
             assert len(matrix) == p**n
             self.p = p
             self.n = n
-            self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix, multiparticle = multiparticle) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
+            if pure:
+                vect = pure_state_from_density_matrix(matrix)
+                self.values = [[ discrete_wig_fuct_pure_state(point_of_plane((col, row)), vect, multiparticle = multiparticle) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
+            else:
+                self.values = [[ discrete_wig_fuct(point_of_plane((col, row)), matrix, multiparticle = multiparticle) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)]
             # with multiprocessing.Pool(processes = 4) as poo:
             #     self.values= poo.starmap(discrete_wig_fuct, [(point_of_plane((col,row)),matrix) for col, row in itertools.product(finite_field_element.list_elements(p,n), repeat = 2)] )
             # self.values = [self.values[i*(p**n):(i+1)*(p**n)] for i in range(p**n)]
@@ -55,12 +61,6 @@ class grid_element(object_modified):
         #assert self.marginals[str(cached_line)][x] == sum([self.get_value(pt) for pt in line.gen_points()])
         return self.marginals[str(cached_line)][x]
 
-        # print("hii")
-        # if line is None:
-        #     return None
-        # #returns the sum of the values over the line
-        # return np.sum([self.get_value(pt) for pt in line.gen_points()])
-
     def total_negativity(self):
         p,n =self.p, self.n
         return np.sum([ np.sum([ self.values[row][col] if self.values[row][col]<0 else 0 for col in range(p**n)]) for row in range(p**n)])
@@ -94,7 +94,7 @@ class grid_element(object_modified):
 
 def test_grid():
     p=5
-    n=2
+    n=1
     matrix = super_position_state_negatives(p,n)
     G=grid_element(matrix, p, n)
     origin = point_of_plane.origin(p,n)
@@ -107,18 +107,14 @@ def test_grid():
             print(np.linalg.matrix_rank(tot, tol = 10**-3))
             assert is_hermitian(tot)
             #assert np.linalg.matrix_rank(tot) == 1
-    #
-    # a=5+3
-    # b=2
-    # A = finite_field_element([3,1],5,2)
-    # B = finite_field_element([2,0],5,2)
-    # pt = point_of_plane((A,B))
-    # assert G.get_value(pt) == G.values[b][a]
-    # assert G.get_value(pt) == discrete_wig_fuct(pt, matrix)
-    # #for l in line_of_plane.list_lines(p,n)
-    # zero = finite_field_element.zero(p,n)
-    # origin = point_of_plane((zero,zero))
-    # for l in origin.gen_lines():
-    #     print(G.marginalize_grid(l))
-
-#test_grid()
+def test_wig_fuct_pure_state():
+    p=5
+    n=2
+    matrix = super_position_state_negatives(p,n)
+    #G2=grid_element(matrix, p, n, pure = True)
+    G1=grid_element(matrix, p, n)
+    # for x in finite_field_element.list_elements(p,n):
+    #     for y in finite_field_element.list_elements(p,n):
+    #         pt = point_of_plane((x,y))
+    #         assert np.allclose(G1.get_value(pt), G2.get_value(pt))
+#profile.run('test_wig_fuct_pure_state()')
