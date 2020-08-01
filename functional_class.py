@@ -2,14 +2,14 @@ from grid_class import *
 from finite_sp_matrix_class import *
 import profile
 finite_matrix.load_dual_basis_matrices()
+
+#This file defines the class of functionals on grids. These are a collection of lines on the grid to be counted.
+#For multidimensional particles, it should really be a collection of isotropic spaces.
 def top_lines_from_direction(grid, direction, percent, from_sl = False):
     p,n = direction.coefficients[0].p, direction.coefficients[0].n
     percent_copy = percent
     a,b = direction.coefficients[0], direction.coefficients[1]
     marginal = grid.marginalize_grid(direction)
-    # for line in direction.gen_parallel_lines():
-    #     assert np.allclose(grid.sum_line(line),grid.sum_line(-line))
-    # print("assertion passed")
     if from_sl:
         marginal = enumerate(marginal)
         representative_marginal = []
@@ -19,8 +19,6 @@ def top_lines_from_direction(grid, direction, percent, from_sl = False):
                     representative_marginal.append((c,value))
         marginal = [x[1] for x in representative_marginal]
         percent_copy = percent / 2
-
-
 
     sorted_decorated_marginal = sorted(enumerate(marginal), key = lambda x: x[1], reverse = True) #sort decreasing by value
     small_sum = 0
@@ -79,6 +77,7 @@ class functional_on_grid(object_modified):
 
     def evaluate_classical(self,grid):
         #finds the point in the grid which lies on the most lines.
+        #I wish we could overload '@' for this.
         assert grid.p == self.p
         assert grid.n == self.n
         best_val = -1
@@ -105,6 +104,8 @@ class functional_on_grid(object_modified):
 
     @classmethod
     def functional_from_sl(cls,sl,grid,percent):
+        #input is a grid, SL element, and percent. Returns a functional so that the lines in each direction sum to probability at least 'percent'
+        #I hope it will require logarithmically (in p^n) few lines in each direction.
         p = grid.p
         n = grid.n
         dict_of_lines = {}
@@ -112,32 +113,25 @@ class functional_on_grid(object_modified):
         rep_direction2 = None
         orbit = []
         for direction in point_of_plane.origin(p,n).gen_lines():
-            #print(direction)
             assert np.allclose(grid.sum_line(direction), grid.sum_line(sl.inverse()*direction))
-            #print("passed assertion")
             if not direction in orbit:
                 if len(orbit) == 0:
                     orbit = sl.orbit(direction)
                     lines_in_direction1 = top_lines_from_direction(grid, direction, percent, from_sl = True)
-                    #print(direction)
                     rep_direction1 = direction
                 else:
                     lines_in_direction2 = top_lines_from_direction(grid, direction, percent, from_sl = True)
-                    #print(direction)
                     rep_direction2 = direction
                     break
         group_element = finite_sp_matrix.identity(2,p,n)
         while not group_element == -finite_sp_matrix.identity(2,p,n):
-            #print(group_element)
             dict_of_lines[str(group_element * rep_direction1)] = [group_element * l for l in lines_in_direction1]
             dict_of_lines[str(group_element * rep_direction2)] = [group_element * l for l in lines_in_direction2]
             group_element = sl * group_element
         return functional_on_grid(dict_of_lines,p,n)
 
-
 def test_sl_from_extension():
-    #p,n = 7,2
-    #i=0
+    #This should really be in a different file for scripts.
     p_n_pairs = [(3,2), (5,2), (7,2), (11,2), (3,3), (5,3), (7,3), (3,4)]
     percents = [0.001, 0.05, 0.1, 0.2, 0.4, 0.5, 0.75]
     print("p, n, i, percent, q_val, c_val, ratio, numlines")
@@ -153,9 +147,6 @@ def test_sl_from_extension():
                 c_val = functional.evaluate_classical(grid)[1]
                 num_lines = len(list(functional.list_lines()))
                 print([p, n, i, percent, q_val, c_val, q_val/c_val, num_lines, total_negativity])
-
-    # print (functional * grid)
-    # print(functional.evaluate_classical(grid))
 def sandbox_test():
     p,n = 7,2
     x = finite_field_element([0,1,0,0], p, 2*n)
@@ -164,37 +155,6 @@ def sandbox_test():
     y=x**pow
     print(pow)
     print(y)
-    #print(finite_field_element.conway_polynomial[(p,n)])
-    #two = finite_field_element([2,0,0,0],5,4)
-    #print(two + two * x**10 + x**20)
-    #print(y**2)
-    #print(x.is_mul_generator())
-    #print(y.is_mul_generator())
-    # x = finite_field_element.mul_generator(7,6)
-    # print(next(x).order())
-
-    # p_n_pairs = [(7,2)]
-    # percents = [0.001, 0.05, 0.1, 0.2, 0.4, 0.5, 0.75]
-    # print("sl_number, i, q_val, c_val, num_lines")
-    # #output_template =
-    # for p,n in p_n_pairs:
-    #     sl_number = 0
-    #     for sl in [s for s in finite_sp_matrix.list_sl_2(p,n) if s.check_order(p**n+1)]:
-    #         for i in range(p**n):
-    #             density_matrix = state_from_sl(sl,i,p,n)
-    #             grid = grid_element(density_matrix, p, n)
-    #             for percent in percents:
-    #             #for percent in [0.001, 0.02, 0.1, 0.25]:
-    #                 functional1 = functional_on_grid.functional_from_sl(sl, grid, percent)
-    #                 #functional2 = functional_on_grid.top_outcomes(grid, percent)
-    #
-    #                 q_val = functional1 * grid
-    #                 c_val = functional1.evaluate_classical(grid)[1]
-    #                 num_lines = len(list(functional1.list_lines()))
-        #                 print([p, n, sl_number, i, percent, q_val, c_val, num_lines])
-    #         sl_number += 1
-
-
 
 def sl_decompose_test():
     #try to find a general pattern for the special sl matrices.

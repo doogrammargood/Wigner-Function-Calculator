@@ -5,6 +5,7 @@ import traceback
 #from sl_class import *
 from covariance_functions import *
 from wigner_function import *
+from finite_sp_matrix_class import *
 def is_unitary(m):
     return np.allclose(np.eye(m.shape[0]), np.matmul(m.H, m) )
 
@@ -53,7 +54,20 @@ def super_position_state_negatives(p,n):
     mat = np.matrix(total) / np.linalg.norm(total)
     return np.matmul(mat.H,mat)
 
-#def superpositon_state_zero_negative
+def stabilizer_state_from_line(l):
+    #TODO: use covariance property to define these faster.
+    p=l.coefficients[0].p
+    n=l.coefficients[0].n
+    total = sum([phase_pt_general(pt) for pt in l.gen_points()])
+    return total
+
+def superpositon_of_stabilizers(p,n):
+    zero = finite_field_element.zero(p,n)
+    one = Z = finite_field_element.one(p,n)
+    l = line_of_plane((zero,one,one))
+    sl = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
+    total = sum([stabilizer_state_from_line(lp) for lp in sl.orbit(l)])
+    return matrix_from_list(total.T)
 
 def cat_state(p,n):
     def all_equal(l):

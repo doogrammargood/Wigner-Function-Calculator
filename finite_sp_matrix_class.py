@@ -1,6 +1,8 @@
 from finite_matrix_class import *
 from numpy_helpers import *
 from affine_plane_class import *
+#This class is a little bloated. It contains all the information for finite symplectic matrices,
+#It also includes SL(2,p) as a special case.
 class finite_sp_matrix(finite_matrix):
     def __init__(self, list_representation):
         if isinstance(list_representation, finite_matrix):
@@ -61,8 +63,8 @@ class finite_sp_matrix(finite_matrix):
         return finite_sp_matrix(super().inverse())
 
     def orbit(self, other):
-        #assert isinstance(other, point_of_plane) or isinstance(other, line_of_plane)
-        #Yay polymorphism!
+        #assert isinstance(other, point_of_plane) or isinstance(other, line_of_plane) or isinstance(other, finite_sp_matrix)
+        #Yay polymorphism! But maybe this should be in finite_matrix.
         to_return = [other]
         current = self*other
         count =0
@@ -96,8 +98,7 @@ class finite_sp_matrix(finite_matrix):
         return prime_matrix
 
     def factorize(self):
-        #TODO: Is this method totally general? Is it necessary that either C or D is invertible?
-        #Maybe this can be deduced from the block-matrix inverse.
+        #TODO: This method is not totally general. Maybe use the symplectic Gaussian Elimination?
         blocks = self.block_matrix_decompose()
         A=blocks[0][0]
         B=blocks[0][1]
@@ -123,7 +124,6 @@ class finite_sp_matrix(finite_matrix):
             assert final_blocks[0][1].is_zero()
             upper = (factor_2*factor_1).inverse()
             #upper is triangular, lower is strictly triangular, and the last matrix is either J inverse or the identity
-            #print(lower)
             return upper, lower, finite_matrix.identity(len(self.elements),self.p,self.n)
 
     def factorize_upper(self):
@@ -220,16 +220,13 @@ class finite_sp_matrix(finite_matrix):
         return (1/guass_sum) * to_return
 
     def weil_representation(self):
-        #print(self)
+        #This is sketchy. For SL matrices, use https://arxiv.org/pdf/0909.5233.pdf
         upper, lower, last = self.factorize()
         upper_blocks = upper.block_matrix_decompose()
 
         up_factor1, up_factor2 = upper.factorize_upper()
         assert up_factor1 * up_factor2 == upper
-        #print(up_factor1, up_factor2)
         low_factor1, low_factor2, low_factor3 = lower.factorize_lower()
-        # print("ss")
-        # print(low_factor1, low_factor2, low_factor3)
         assert up_factor1 * up_factor2 * low_factor1 * low_factor2 * low_factor3 * last == self
         J = finite_sp_matrix(finite_matrix.symplectic_form(len(self.elements),self.p,1))
         assert low_factor1 == J
@@ -238,22 +235,16 @@ class finite_sp_matrix(finite_matrix):
         #weil_of_j_inv = np.linalg.inv(weil_of_j)
         weil_of_j_inv = weil_of_j.H
         #assert np.allclose(np.eye(5,5), weil_of_j @ weil_of_j_inv)
-        # print(weil_of_j @ weil_of_j)
-        # print((J*J).C_type_weil())
         assert np.allclose((J*J).C_type_weil(),weil_of_j @ weil_of_j)
-        #print("pass")
         #assert np.allclose(np.eye(5,5),  weil_of_j @ weil_of_j @ weil_of_j @ weil_of_j)
-        #print (J*J)
         assert is_unitary(up_factor1.C_type_weil())
         assert is_unitary(up_factor2.A_type_weil())
         assert is_unitary(weil_of_j)
         assert is_unitary(low_factor2.A_type_weil())
         #assert is_unitary()
         if last == J.inverse():
-            #print("occurs")
             to_return = up_factor1.C_type_weil() @ up_factor2.A_type_weil() @ weil_of_j @ low_factor2.A_type_weil() @ weil_of_j_inv @ weil_of_j_inv
         else:
-            #print("echo")
             to_return = up_factor1.C_type_weil() @ up_factor2.A_type_weil() @ weil_of_j @ low_factor2.A_type_weil() @ weil_of_j_inv
         #assert is_unitary(to_return)
         return to_return
@@ -312,9 +303,9 @@ class finite_sp_matrix(finite_matrix):
         return self == finite_sp_matrix.identity(len(self.elements), self.p, self.n)
     @classmethod
     def get_element_of_sl_2_from_field_extension(cls,p,n):
+        #returns an element of sl_2 with order p**n+1.
         m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
         mat = finite_matrix.from_finite_field_element(m, new_n = n)
-        #print (len(mat.elements))
         return finite_sp_matrix(mat ** (p**n-1))
 
     @classmethod

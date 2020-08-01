@@ -4,8 +4,8 @@ from density_matrix_functions import *
 import profile
 #finite_matrix.load_dual_basis_matrices()
 class grid_element(object_modified):
-    def __init__(self, matrix, p, n, compute_fresh = True, multiparticle = False, pure = False):
-        mat_in = matrix.copy()
+    def __init__(self, matrix, p, n, compute_fresh = True, multiparticle = False):
+        pure = np.allclose(matrix, matrix @ matrix)
         if compute_fresh:
             assert len(matrix) == p**n
             self.p = p
@@ -37,7 +37,6 @@ class grid_element(object_modified):
         epsilon = 10**-7
         if line is None:
             return None
-        #lines = line_of_plane.gen_parallel_lines(line)
         marginal = []
         for l in line.gen_parallel_lines():
             marginal.append(sum([self.get_value(pt) for pt in l.gen_points()]) )
@@ -75,7 +74,7 @@ class grid_element(object_modified):
         return current
 
     def dictionary_state(self):
-        #returns a dictionary with its information.
+        #returns a dictionary with its information. For saving.
         dict = {}
         dict['p']=self.p
         dict['n']=self.n

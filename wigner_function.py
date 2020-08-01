@@ -2,9 +2,10 @@ import itertools
 import numpy as np
 import math
 import traceback
-from sl_class import *
+from affine_plane_class import *
 from finite_matrix_class import *
-#from wigner_function import *
+
+#This file contains the wigner function, and associated functions. Functions described as 'general' apply to all finite fields.
 
 def parity_operator(p):
     array=[[1.0 if c== (-r)%p else 0.0 for c in range(p)]for r in range(p)]
@@ -50,10 +51,11 @@ def phase_pt_elementary(x,p):
         return weil_elementary( 2*x0,2*x1 , p ) @ parity_operator(p)
 
 def phase_pt_general(pt, multiparticle = False):
+    #Multiparticle is False when we calculate the Wigner Function of a single d^n dimensional particle.
+    #True when we calculate the Wigner Function of n d-dimensional particles.
     if pt.x.n >1:
         if not multiparticle:
             point = point_of_plane ( (finite_matrix.convert_to_dual(pt.x), pt.y) )
-            #point = point_of_plane ( (pt.x, finite_matrix.convert_to_dual(pt.y)) )
         else:
             point = point_of_plane ( (pt.x, pt.y) )
     else:
@@ -76,7 +78,6 @@ def discrete_wig_fuct_pure_state(x,vect,multiparticle = False):
     else:
         pt = x
     total = 0
-    #two_inv = (d+1)/2
     two_inv = finite_field_element([(p+1)//2],p,1)
     x_vec = pt.x.to_vector()
     y_vec = pt.y.to_vector()
@@ -100,14 +101,12 @@ def pure_state_from_density_matrix(mat):
     w,v = np.linalg.eigh(mat)
     i = len(v)-1
     vect= v[:,i].H
-    #print(vect)
     assert np.allclose(np.matrix(vect).H @ np.matrix(vect), mat)
     return vect
 
 def test_functions():
     p,n = 5,1
     r= random_pure_state(p,n)
-    #print(phase_pt_elementary((0,1),p))
     pt = point_of_plane( (finite_field_element([0,1],5,1),finite_field_element.zero(5,1) ))
     print (discrete_wig_fuct(pt,r))
 
@@ -122,9 +121,3 @@ def debug_test():
     assert np.allclose(d,c)
     print(c)
     print(d)
-#debug_test()
-#kron_test()
-#test_functions()
-
-#example_from_gross()
-#test_functions()

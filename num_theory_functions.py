@@ -84,9 +84,3 @@ def prime_factorization(n): #This function assumes n < 510,510
 
 def maximal_proper_factors(n):
     return [n//p[0] for p in prime_factorization(n)]
-
-
-#print(to_base(54,2))
-
-# for p in prime_factorization(51):
-#     print(p)

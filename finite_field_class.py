@@ -4,8 +4,11 @@ from num_theory_functions import *
 from functools import reduce
 import pickle
 
+#This file defines the finite field. I bet it does roughly the same thing as pyfinite.
+
 class polynomial_element(object):
     #n is an upper bound on the degree, p is the prime field of coefficients.
+    #This class should not be used, except in defining finite field elements.
     def __init__(self,coordinates,p,n):
         self.p=p
         self.n=n
@@ -227,15 +230,6 @@ class finite_field_element(polynomial_element):
             if (self**x).is_one():
                 return False
         return True
-
-    # def root(self, r):
-    #     assert not self.is_zero()
-    #     if self.is_one():
-    #         return(self)
-    #     for x in finite_field_element.list_nonzero_elements(self.p,self.n):
-    #         print(x)
-    #         if x**r == self:
-    #             return x
 
     def trace(self):
         tot = finite_field_element.zero(self.p,self.n)

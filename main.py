@@ -6,6 +6,7 @@ from PyQt5.QtCore import *
 #from sl_class import *
 from wigner_function import *
 from grid_class import *
+from finite_sp_matrix_class import *
 import math
 import pyqtgraph as pg
 IMG_FLAG = QImage("./images/flag.png")

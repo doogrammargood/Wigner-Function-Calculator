@@ -3,6 +3,8 @@ from finite_field_class import *
 from functools import reduce
 import numpy as np
 #finite_field_element.load_dual_vectors()
+
+#These first few functions are subroutines for Gaussian Elimination.
 def swap_positions(list, pos1, pos2):
     #from Geeks for Geeks
     list[pos1], list[pos2] = list[pos2], list[pos1]
@@ -296,12 +298,11 @@ class finite_matrix(object):
 
     @classmethod
     def convert_to_dual(cls, ffe):
-        # if ffe.n == 1:
-        #     return ffe
+        #expresses ffe in the dual basis.
+        if ffe.n == 1:
+            return ffe
         col_mat = cls.dual_basis_conversion[(ffe.p,ffe.n)] * finite_matrix(ffe)
         return finite_field_element.from_vector(col_mat.column_matrix_to_vector())
-
-    #Guassian Elimination Methods:
 
 
     def inverse(self):
@@ -317,8 +318,6 @@ class finite_matrix(object):
         top = 0
 
         for x_index in range(w):
-            #print(elts)
-            #print("ooh")
             pivot = find_nonzero(elts,top,h,x_index)
 
             elts = swap_row(elts, top, pivot)
@@ -333,13 +332,11 @@ class finite_matrix(object):
         return finite_matrix(iden)
 
     def determinant(self):
-        #computes a row eschelon form.
+        #computes a row eschelon form, then multiplies diagonal elements.
         elts = self.elements.copy()
         pivot = None
         size = len(elts)
-        #top = 0
         det = finite_field_element.one(self.p,self.n)
-        #print(size)
         #assert len(elts[0])==size #determinant is only defined for square matrices
         for x_index in range(size):
             pivot = find_nonzero(elts,x_index,size,x_index)
@@ -499,28 +496,3 @@ def check_dual_basis_transform():
     print(y)
     for i in range(3):
         print(finite_field_element.dual_basis[(i,3,3)])
-
-# def check_block_matrix_initialization():
-#     I = finite_matrix.identity(3,3,1)
-#     O = finite_matrix.zero(3,3,1)
-#     to_check = finite_matrix([[O,I],[I,O]])
-#     print(to_check)
-#check_block_matrix_initialization()
-#check_dual_basis_transform()
-#record_dual_basis_transform()
-# a = finite_field_element([2,1],3,2)
-# i = finite_field_element.one(3,2)
-# o = finite_field_element.zero(3,2)
-# A = finite_matrix([[a,a,a],[a,a,a],[a,a,a]])
-# print(A.determinant())
-#for m in [ m for m in finite_matrix.list_symmetric_matrices(2,3,1) if not m.determinant().is_zero()]:
-#for m in finite_matrix.list_symmetric_matrices(2,3,1):
-# for m in finite_matrix.list_square_matrices(2,3,1):
-#     if m.is_symplectic():
-#         print(m)
-#         print(m.determinant())
-    # print(m)
-    # print(m.determinant())
-# print("---")
-# for m in [ m for m in finite_matrix.list_square_matrices(2,3,1) if not m.determinant().is_zero()]:
-#     print(m)
