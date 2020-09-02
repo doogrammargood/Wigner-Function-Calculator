@@ -7,9 +7,10 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 17
+        self.p = 19
         self.n = 1
-        self.density_matrix = super_position_state_negatives(self.p, self.n)
+        #self.density_matrix = super_position_state_negatives(self.p, self.n)
+        self.density_matrix = random_pure_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
         self.clear_data()
     def clear_data(self):
@@ -41,6 +42,7 @@ class MyMainWindow(QMainWindow):
                 w = self.wig.grid.itemAtPosition(int(x),int(y)).widget()
                 w.hovered.connect(self.handle_hover)
                 w.clicked.connect(self.handle_click)
+                w.right_clicked.connect(self.handle_right_click)
 
         if not reconnect_wig:
             random_button = self.findChild(QPushButton,"button_random")
@@ -98,7 +100,8 @@ class MyMainWindow(QMainWindow):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         elif e.key() == QtCore.Qt.Key_Space:
-            self.change_matrix(state_with_special_order(self.p))
+            #self.change_matrix(state_with_special_order(self.p))
+            self.change_matrix(labyrinth_state(self.p,self.n))
             #self.change_matrix(None)
         elif e.key() == QtCore.Qt.Key_A:
             #mat = cat_state(self.p,self.n)
@@ -126,30 +129,38 @@ class MyMainWindow(QMainWindow):
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         if self.pt1.isNone():
             self.pt1 = pt
-            self.wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
             self.pos1.copy_data(pos)
         elif pt == self.pt1:
             self.pt1 = self.pt2
             self.pt2 = point_of_plane(None)
-            self.wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
             self.pos1.copy_data(self.pos2)
             self.pos2.copy_data(Pos(None))
-            self.pos1.set_unmark()
+            self.pos1.set_decorator('marked',val=False)
             self.line = line_of_plane(None)
         elif pt == self.pt2:
             self.pt2 = point_of_plane(None)
-            self.wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
             self.pos2.copy_data(Pos(None))
-            self.pos1.set_unmark()
+            self.pos1.set_decorator('marked',val=False)
             self.line = line_of_plane(None)
         else:
             self.pt2 = pt
-            self.wig.set_flagged([self.pt1, self.pt2])
+            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
             self.pos2.copy_data(pos)
-            self.pos1.set_mark()
+            self.pos1.set_decorator('marked')
             self.line = self.pt1.line_to(self.pt2)
         self.update_views(pt,pos)
 
+    def handle_right_click(self,pt):
+        pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+        decorated = self.wig.decorators['highlighted']
+        if pt not in decorated:
+            self.wig.set_decorators('highlighted',decorated+[pt])
+        else:
+            self.wig.set_decorators('highlighted',[p for p in decorated if not p == pt])
+        #self.update_views(pt,pos)
 
     def handle_hover(self,pt):
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
@@ -195,7 +206,7 @@ class MyMainWindow(QMainWindow):
 
         #self.pt1 = pt
         if self.pt1.isNone():
-            self.wig.set_markings([])
+            self.wig.set_decorators('marked',[])
             value1 = self.grid.get_value(pt)
             self.local_view.set_values(pt, value1, pos, point_of_plane(None), None, Pos(None), line_of_plane(None), None, None)
         elif self.pt2.isNone():
@@ -205,12 +216,12 @@ class MyMainWindow(QMainWindow):
             valuel = self.grid.sum_line(line)
             marginal = self.grid.marginalize_grid(line)
             if self.pt1.is_on_line(line):
-                self.pos1.set_mark()
+                self.pos1.set_decorator('marked')
             else:
-                self.pos1.set_unmark()
-            pos.set_mark()
+                self.pos1.set_decorator('marked', val = False)
+            pos.set_decorator('marked')
             self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal)
-            self.wig.set_markings(list(line.gen_points()))
+            self.wig.set_decorators('marked',list(line.gen_points()))
         else:
             value1 = self.grid.get_value(self.pt1)
             value2 = self.grid.get_value(self.pt2)
@@ -218,15 +229,15 @@ class MyMainWindow(QMainWindow):
             valuel = self.grid.sum_line(line)
             marginal = self.grid.marginalize_grid(line)
             if self.pt1.is_on_line(line):
-                self.pos1.set_mark()
+                self.pos1.set_decorator('mark')
             else:
-                self.pos1.set_unmark()
+                self.pos1.set_decorator('mark',val = False)
             if self.pt2.is_on_line(line):
-                self.pos2.set_mark()
+                self.pos2.set_decorator('mark')
             else:
-                self.pos2.set_unmark()
+                self.pos2.set_decorator('mark',val=False)
             self.local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, line, valuel, marginal)
-            self.wig.set_markings(list(line.gen_points()))
+            self.wig.set_decorators('marked',list(line.gen_points()))
 
     def save(self,filename):
         file = open(filename, "wb")

@@ -18,8 +18,12 @@ def matrix_from_list(vector):
     return np.matmul(mat.H,mat)
 
 def random_pure_state(p,n):
-    # for line in traceback.format_stack():
-    #     print(line.strip())
+    vector1 = np.array(np.random.normal(size = p ** n))
+    vector2 = 1j*( np.array(np.random.normal( size = p ** n)) )
+    vector = vector1 + vector2
+    return matrix_from_list(vector)
+def random_pure_state_strange(p,n):
+    #This is not the usual distrubition of random states.
     vector1 = np.array(np.random.rand(p**n)) - np.array([0.5 for i in range(p**n)])
     vector2 = 1j*( np.array(np.random.rand(p**n)) - np.array([0.5 for i in range(p**n)]) )
     vector = vector1 + vector2
@@ -35,7 +39,7 @@ def maximally_mixed_state(p,n):
 
 def super_position_state(p,n):
     vector = np.array([1.0 for i in range(p**n)])
-    #vector = np.array(weil_elementary(1,0,p)).dot(vector)
+    #vector = np.array(weil_elementary(1,0,p)00).dot(vector)
     #vector = np.matmul(weil_elementary( -1, 0,p),vector.T).T
     return matrix_from_list(vector)
 def super_position_zero_negative(p,n):
@@ -69,11 +73,16 @@ def superpositon_of_stabilizers(p,n):
     total = sum([stabilizer_state_from_line(lp) for lp in sl.orbit(l)])
     return matrix_from_list(total.T)
 
+
 def cat_state(p,n):
     def all_equal(l):
         return all([l[i]==l[i+1] for i in range(len(l)-1)])
     vector = [1.0 if all_equal(finite_field_element.from_int(i,p,n).coordinates) else 0 for i in range(p**n)]
     return matrix_from_list(vector)
+
+def labyrinth_state(p,n):
+    sl = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
+    return state_from_sl(sl, 0, p, n)
 
 def state_from_sl(sl, index, p, n):
     unitary = unitary_from_sl(sl, p, n)

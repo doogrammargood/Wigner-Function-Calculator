@@ -1,11 +1,12 @@
 from grid_class import *
 from finite_sp_matrix_class import *
 import profile
-finite_matrix.load_dual_basis_matrices()
+
 
 #This file defines the class of functionals on grids. These are a collection of lines on the grid to be counted.
 #For multidimensional particles, it should really be a collection of isotropic spaces.
 def top_lines_from_direction(grid, direction, percent, from_sl = False):
+    #I now realize this method for generating functionals is doomed to fail, due to the entropic uncertainty principle.
     p,n = direction.coefficients[0].p, direction.coefficients[0].n
     percent_copy = percent
     a,b = direction.coefficients[0], direction.coefficients[1]
@@ -39,13 +40,17 @@ def top_lines_from_direction(grid, direction, percent, from_sl = False):
 
 class functional_on_grid(object_modified):
     def __init__(self, dict_of_lines, p, n, multiparticle = False):
-        #assume dict of lines is a dictonary from str(direction) to lists of lines
+        #assume dict of lines is a dictonary from str(direction) to lists of  pairs: (lines, weight) where weights are real.
         self.dictionary_of_lines = {}
+        self.point_count = None #counts the number of negative points.
         self.p = p
         self.n = n
         for direction in point_of_plane.origin(p,n).gen_lines():
             if str(direction) in dict_of_lines.keys():
-                self.dictionary_of_lines[str(direction)] = dict_of_lines[str(direction)]
+                if isinstance(dict_of_lines[str(direction)][0],tuple):
+                    self.dictionary_of_lines[str(direction)] = dict_of_lines[str(direction)]
+                else:
+                    self.dictionary_of_lines[str(direction)] = zip(dict_of_lines[str(direction)], [1]*len(dict_of_lines[str(direction)]))
             else:
                 self.dictionary_of_lines[str(direction)] = []
     def list_lines(self):
@@ -65,14 +70,14 @@ class functional_on_grid(object_modified):
         for direction in point_of_plane.origin(self.p,self.n).gen_lines():
             for item in self.dictionary_of_lines[str(direction)]:
                 #sum += grid.marginalize_grid(direction)[int(item.coefficients[2])]
-                sum += grid.sum_line(item)
+                sum += item[1]*grid.sum_line(item[0])
         return sum
 
     def evaluate_classical_pt(self, grid, pt):
         counter = 0
         for l in self.list_lines():
-            if pt.is_on_line(l):
-                counter +=1
+            if pt.is_on_line(l[0]):
+                counter += l[1]
         return counter
 
     def evaluate_classical(self,grid):
@@ -105,7 +110,7 @@ class functional_on_grid(object_modified):
     @classmethod
     def functional_from_sl(cls,sl,grid,percent):
         #input is a grid, SL element, and percent. Returns a functional so that the lines in each direction sum to probability at least 'percent'
-        #I hope it will require logarithmically (in p^n) few lines in each direction.
+        #I've since found out that this method of creating functionals is doomed.
         p = grid.p
         n = grid.n
         dict_of_lines = {}
@@ -130,23 +135,24 @@ class functional_on_grid(object_modified):
             group_element = sl * group_element
         return functional_on_grid(dict_of_lines,p,n)
 
-def test_sl_from_extension():
-    #This should really be in a different file for scripts.
-    p_n_pairs = [(3,2), (5,2), (7,2), (11,2), (3,3), (5,3), (7,3), (3,4)]
-    percents = [0.001, 0.05, 0.1, 0.2, 0.4, 0.5, 0.75]
-    print("p, n, i, percent, q_val, c_val, ratio, numlines")
-    for p,n in p_n_pairs:
-        sl = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
-        for i in range(p**n):
-            density_matrix = state_from_sl(sl,i,p,n)
-            grid = grid_element(density_matrix, p, n, pure = True)
-            total_negativity = grid.total_negativity()
-            for percent in percents:
-                functional = functional_on_grid.functional_from_sl(sl, grid, percent)
-                q_val = functional * grid
-                c_val = functional.evaluate_classical(grid)[1]
-                num_lines = len(list(functional.list_lines()))
-                print([p, n, i, percent, q_val, c_val, q_val/c_val, num_lines, total_negativity])
+    @classmethod
+    def functional_counting_positive_points(cls, grid):
+        p = grid.p
+        n = grid.n
+        dict_of_lines = {}
+        for direction in point_of_plane.origin(p,n).gen_lines():
+            lines_in_this_direction = []
+            total_positive_count = 0
+            for line in direction.gen_parallel_lines():
+                positive_count = len([ 1 for pt in line.gen_points() if grid.get_value(pt) < 0])
+                if positive_count > 0:
+                    lines_in_this_direction.append((line, positive_count))
+                    total_positive_count += positive_count
+            dict_of_lines[str(direction)] = lines_in_this_direction
+        f = functional_on_grid(dict_of_lines,p,n)
+        f.point_count = total_positive_count
+        return f
+
 def sandbox_test():
     p,n = 7,2
     x = finite_field_element([0,1,0,0], p, 2*n)
@@ -180,5 +186,5 @@ def sl_decompose_test():
     #I = finite_matrix.identity(n,p,1)
 #sl_decompose_test()
 #sandbox_test()
-test_sl_from_extension()
+#test_sl_from_extension()
 #profile.run('sandbox_test()')

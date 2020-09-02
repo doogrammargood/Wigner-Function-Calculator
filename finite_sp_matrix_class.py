@@ -1,6 +1,8 @@
 from finite_matrix_class import *
 from numpy_helpers import *
 from affine_plane_class import *
+from wigner_function import *
+#finite_matrix.load_dual_basis_matrices()
 #This class is a little bloated. It contains all the information for finite symplectic matrices,
 #It also includes SL(2,p) as a special case.
 class finite_sp_matrix(finite_matrix):
@@ -220,6 +222,9 @@ class finite_sp_matrix(finite_matrix):
         return (1/guass_sum) * to_return
 
     def weil_representation(self):
+
+        if len(self.elements) ==2:
+            return self._weil_representation_case_2()
         #This is sketchy. For SL matrices, use https://arxiv.org/pdf/0909.5233.pdf
         upper, lower, last = self.factorize()
         upper_blocks = upper.block_matrix_decompose()
@@ -248,6 +253,32 @@ class finite_sp_matrix(finite_matrix):
             to_return = up_factor1.C_type_weil() @ up_factor2.A_type_weil() @ weil_of_j @ low_factor2.A_type_weil() @ weil_of_j_inv
         #assert is_unitary(to_return)
         return to_return
+
+    def _weil_representation_case_2(self):
+        #Following https://arxiv.org/pdf/0909.5233.pdf see equation 76.
+        if len(self.elements) != 2:
+            print ("Only call for 2x2 matrices.")
+        p, n = self.p, self.n
+        d = p**n
+
+        two = finite_field_element.from_int(2,p,n)
+        two_inv = int(two.inverse())
+        tau = np.e**(np.pi *1j * (p+1)/p)
+
+        one = finite_field_element.one(p,n)
+        zero = finite_field_element.zero(p,n)
+        K = finite_matrix([[zero, one], [one, zero]]) #Appleby's displacement operators are XZ, so we have to flip.
+        other = K*self*K
+        alpha, beta = other.elements[0]
+        gamma, delta = other.elements[1]
+        if beta.is_zero():
+            factor = alpha.square_class()
+            to_return = factor * np.array([[tau** (int((alpha*gamma*col**2).trace())) if row == alpha*col else 0 for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)])
+        else:
+            l_tilde = -(1j**-((n*(p+3)/2)))*(-beta).square_class()
+            to_return = l_tilde/(d**0.5) * np.array([[ tau**(int(((alpha*col**2-two*row*col+delta*row**2)/beta).trace())) for col in finite_field_element.list_elements(p,n)]for row in finite_field_element.list_elements(p,n)])
+        return to_return
+
 
     @classmethod
     def identity(cls, size,p,n):
@@ -315,6 +346,9 @@ class finite_sp_matrix(finite_matrix):
         for A0 in finite_matrix.list_symmetric_matrices(size//2,p,n):
             for C in finite_matrix.list_invertible_matrices(size//2,p,n):
                 pass
+
+
+#_weil_representation_case_2()
 # p,n =3,2
 # count = 0
 # for x in finite_sp_matrix.list_sl_2(p,n):

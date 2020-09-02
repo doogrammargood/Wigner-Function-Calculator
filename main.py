@@ -10,6 +10,7 @@ from finite_sp_matrix_class import *
 import math
 import pyqtgraph as pg
 IMG_FLAG = QImage("./images/flag.png")
+IMG_BOMB = QImage("./images/bomb.png")
 
 def find_color(value, min, max):
     epsilon = 0.001
@@ -24,6 +25,7 @@ def find_color(value, min, max):
 
 class Pos(QWidget):
     clicked = pyqtSignal(point_of_plane)
+    right_clicked = pyqtSignal(point_of_plane)
     hovered = pyqtSignal(point_of_plane)
     unhovered = pyqtSignal()
 
@@ -32,6 +34,7 @@ class Pos(QWidget):
 
         self.is_flagged = False# flagged points are the ones that have been clicked
         self.is_marked = False# Marked to show when points are on a line.
+        self.is_highlighted = False
         self.value = 0 #determines the shading.
         if pt is None:
             self.dim = 5**2
@@ -76,6 +79,8 @@ class Pos(QWidget):
         p.drawRect(r)
         if self.is_flagged:
             p.drawPixmap(r, QPixmap(IMG_FLAG))
+        if self.is_highlighted:
+            p.drawPixmap(r, QPixmap(IMG_BOMB))
 
     def copy_data(self, other):
         self.is_flagged = other.is_flagged
@@ -87,23 +92,20 @@ class Pos(QWidget):
         self.dim = other.dim
         self.update()
 
-    def flag(self):
-        self.is_flagged = True
-        self.update()
+    def set_decorator(self, decorator, val = True):
+        if decorator == 'flagged':
+            self.is_flagged = val
+        elif decorator == 'marked':
+            self.is_marked = val
+        elif decorator == 'highlighted':
+            self.is_highlighted = val
 
-    def unflag(self):
-        self.is_flagged = False
-        self.update()
-
-    def set_mark(self):
-        self.is_marked = True
-        self.update()
-    def set_unmark(self):
-        self.is_marked = False
-        self.update()
     def eventFilter(self, object, event):
         if event.type() == QEvent.MouseButtonPress:
-            self.clicked.emit(self.pt)
+            if event.button() == Qt.LeftButton:
+                self.clicked.emit(self.pt)
+            elif event.button() == Qt.RightButton:
+                self.right_clicked.emit(self.pt)
         elif event.type() == QEvent.Enter:
             self.hovered.emit(self.pt)
         elif event.type() == QEvent.Leave:
@@ -115,8 +117,7 @@ class Pos(QWidget):
 class WignerWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super(QWidget, self).__init__(*args)
-        self.flagged_pts=[]
-        self.marked_pts=[]
+        self.decorators = {'flagged':[], 'marked':[], 'highlighted':[]}
         #self.b_size=25
         #w = QWidget()
         hb = QHBoxLayout()
@@ -150,27 +151,15 @@ class WignerWidget(QWidget):
                 # Connect signal to handle expansion.
                 #w.clicked.connect(self.flags_changed)
 
-
-    def set_flagged(self, flags):
-        flagged =[f for f in flags if not f.isNone()]
-        for pt in self.flagged_pts:
+    def set_decorators(self, decorator, positions):
+        new_positions = [p for p in positions if not p.isNone()]
+        for pt in self.decorators[decorator]:
             w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
-            w.unflag()
-
-        for pt in flagged:
+            w.set_decorator(decorator, val=False)
+        for pt in new_positions:
             w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
-            w.flag()
-        self.flagged_pts = flagged
-
-    def set_markings(self, new_marks):
-        new_markings = [m for m in new_marks if not m.isNone()]
-        for pt in self.marked_pts:
-            w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
-            w.set_unmark()
-        for pt in new_markings:
-            w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
-            w.set_mark()
-        self.marked_pts = new_markings
+            w.set_decorator(decorator)
+        self.decorators[decorator] = new_positions
 
     def set_flags_sl(self,pt):
         generator = sl_matrix.gen_with_order(self.p,self.n)
