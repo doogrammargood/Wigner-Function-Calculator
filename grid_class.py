@@ -73,6 +73,14 @@ class grid_element(object_modified):
                     current = point_of_plane((x,y))
         return current
 
+    def entropy(self, a, line):
+        if line.isNone():
+            return None
+        marginal = self.marginalize_grid(line)
+        if np.allclose(a,1): #return shannon entropy
+            return -sum([p*math.log2(p) for p in marginal])
+        else:
+            return 1/(1-a)*math.log2(sum([p**a for p in marginal]))
     def dictionary_state(self):
         #returns a dictionary with its information. For saving.
         dict = {}

@@ -97,6 +97,11 @@ def state_from_sl(sl, index, p, n):
     return np.matmul(eig,eig.H)
     #return matrix_from_list(eig)
 
+def unitary_from_sl(sl, p, n):
+    sp = sl.sl_matrix_to_prime_matrix(p,n)
+    unitary = np.matrix(sp.weil_representation())
+    return unitary
+
 def matrix_from_gross():
     p=3
     vector = np.array([0., 1., -1. ])
@@ -117,10 +122,6 @@ def matrix_from_gross():
     dense_matrix = 1/3*(a + b + c)
     return dense_matrix
 
-def unitary_from_sl(sl, p, n):
-    sp = sl.sl_matrix_to_prime_matrix(p,n)
-    unitary = sp.weil_representation()
-    return unitary
 
 # def unitary_from_sl(mat, p): This is deprecated. It only handled prime matrices.
 #     #Assumes p is prime.

@@ -12,6 +12,7 @@ class MyMainWindow(QMainWindow):
         #self.density_matrix = super_position_state_negatives(self.p, self.n)
         self.density_matrix = random_pure_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
+        self.entropy_value = 1
         self.clear_data()
     def clear_data(self):
         self.pt1 = point_of_plane(None)
@@ -208,7 +209,7 @@ class MyMainWindow(QMainWindow):
         if self.pt1.isNone():
             self.wig.set_decorators('marked',[])
             value1 = self.grid.get_value(pt)
-            self.local_view.set_values(pt, value1, pos, point_of_plane(None), None, Pos(None), line_of_plane(None), None, None)
+            self.local_view.set_values(pt, value1, pos, point_of_plane(None), None, Pos(None), line_of_plane(None), None, None, None)
         elif self.pt2.isNone():
             value1 = self.grid.get_value(self.pt1)
             value2 = self.grid.get_value(pt)
@@ -220,7 +221,8 @@ class MyMainWindow(QMainWindow):
             else:
                 self.pos1.set_decorator('marked', val = False)
             pos.set_decorator('marked')
-            self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal)
+            entropy = self.grid.entropy(2, line)
+            self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal, (self.entropy_value, entropy) )
             self.wig.set_decorators('marked',list(line.gen_points()))
         else:
             value1 = self.grid.get_value(self.pt1)
@@ -236,7 +238,8 @@ class MyMainWindow(QMainWindow):
                 self.pos2.set_decorator('mark')
             else:
                 self.pos2.set_decorator('mark',val=False)
-            self.local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, line, valuel, marginal)
+            entropy = self.grid.entropy(self.entropy_value, line)
+            self.local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, line, valuel, marginal, (self.entropy_value, entropy))
             self.wig.set_decorators('marked',list(line.gen_points()))
 
     def save(self,filename):

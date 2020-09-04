@@ -202,8 +202,8 @@ class LocalView(QWidget):
         self.valuel = None
         self.marginal = None
         self.pos1 = Pos(None)
-
         self.pos2 = Pos(None)
+        self.entropy = None
         vb = QVBoxLayout()
         self.setLayout(vb)
         #self.label_pt.setAlignment(Qt.AlignCenter)
@@ -215,6 +215,7 @@ class LocalView(QWidget):
         self.label_value2 = QLabel()
         self.label_line = QLabel()
         self.label_valuel = QLabel()
+        self.label_entropy = QLabel()
         self.marginal_display = pg.PlotWidget()
         #size_policy = QSizePolicy()
         size_policy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
@@ -245,13 +246,15 @@ class LocalView(QWidget):
         vb.addWidget(self.label_line)
         vb.addWidget(self.label_valuel)
 
+        vb.addWidget(self.label_entropy)
+
         h_marg = QHBoxLayout()
         h_marg.addWidget(self.marginal_display)
         vb.addLayout(h_marg)
         #self.marginal_display.resize(40,50)
         self.set_labels()
         #self.show()
-    def set_values(self, pt1, value1, pos1, pt2, value2, pos2, line, valuel, marginal):
+    def set_values(self, pt1, value1, pos1, pt2, value2, pos2, line, valuel, marginal, entropy):
         self.pt1 = pt1
         self.value1 = value1
         self.pos1.copy_data(pos1)
@@ -261,6 +264,7 @@ class LocalView(QWidget):
         self.line = line
         self.valuel = valuel
         self.marginal = marginal
+        self.entropy = entropy
         self.set_labels()
         self.update()
 
@@ -271,6 +275,8 @@ class LocalView(QWidget):
         self.label_value2.setText("Value of pt2 = "+ str(self.value2) )
         self.label_line.setText("line = " + str(self.line))
         self.label_valuel.setText("Value of Line = " + str(self.valuel))
+        if not self.entropy is None:
+            self.label_entropy.setText("Renyi "+ str(self.entropy[0]) +" entropy: " + str(self.entropy[1]))
         #self.marginal_display.setText("Hoo")
         if not self.line.isNone():
             self.marginal_display.clear()
