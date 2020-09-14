@@ -96,13 +96,7 @@ def discrete_wig_fuct_pure_state(x,vect,multiparticle = False):
     to_return = total/d
     #assert np.allclose(to_return, np.real(to_return))
     return np.real(to_return)
-def pure_state_from_density_matrix(mat):
-    assert np.allclose(mat @ mat, mat)
-    w,v = np.linalg.eigh(mat)
-    i = len(v)-1
-    vect= v[:,i].H
-    assert np.allclose(np.matrix(vect).H @ np.matrix(vect), mat)
-    return vect
+
 
 def test_functions():
     p,n = 5,1

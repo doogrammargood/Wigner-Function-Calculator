@@ -267,7 +267,7 @@ class finite_sp_matrix(finite_matrix):
 
         one = finite_field_element.one(p,n)
         zero = finite_field_element.zero(p,n)
-        K = finite_matrix([[zero, one], [one, zero]]) #Appleby's displacement operators are XZ, so we have to flip.
+        K = finite_matrix([[zero, one], [one, zero]]) #Appleby's displacement operators are XZ, so we have to flip. TODO: prove this is correct
         other = K*self*K
         alpha, beta = other.elements[0]
         gamma, delta = other.elements[1]

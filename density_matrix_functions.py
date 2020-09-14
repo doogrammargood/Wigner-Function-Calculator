@@ -95,12 +95,17 @@ def state_from_sl(sl, index, p, n):
     assert np.allclose((unitary @ eig).H, eig.H @ unitary.H)
     assert np.allclose(eig @ eig.H, unitary @ eig @ eig.H @ unitary.H)
     return np.matmul(eig,eig.H)
-    #return matrix_from_list(eig)
 
 def unitary_from_sl(sl, p, n):
     sp = sl.sl_matrix_to_prime_matrix(p,n)
     unitary = np.matrix(sp.weil_representation())
     return unitary
+
+def state_from_collapse_to_labyrinth(p,n):
+    density_matrix = zero_state(p,n)
+    sl = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
+    unitary = unitary_from_sl(sl, p, n)
+    return collapse_to_eigenstate(density_matrix, unitary, 1)
 
 def matrix_from_gross():
     p=3
@@ -121,30 +126,6 @@ def matrix_from_gross():
     #return matrix_from_list(vector)
     dense_matrix = 1/3*(a + b + c)
     return dense_matrix
-
-
-# def unitary_from_sl(mat, p): This is deprecated. It only handled prime matrices.
-#     #Assumes p is prime.
-#     alpha = int(mat.matrix[0][0])
-#     beta = int(mat.matrix[0][1])
-#     gamma = int(mat.matrix[1][0])
-#     epsilon = int(mat.matrix[1][1])
-#     omega = np.exp((2*np.pi*1j)/float(p))
-#     tau = omega ** modinv(2,p)
-#     if p==2:
-#         tau = 1j
-#     array = []
-#     if beta == 0:
-#         array = [[tau**(alpha*gamma*r**2) if (alpha*r)%p==c else 0 for c in range(p)] for r in range(p)]
-#         return np.matrix(array)
-#     else:
-#         for j in range(p):
-#             row = []
-#             for k in range(p):
-#                 #print (alpha*k**2 - 2*j*k + epsilon*j**2)%p *(beta**-1)
-#                 row.append(p**-0.5 * tau** ( (alpha*k**2 - 2*j*k + epsilon*j**2) *(beta**-1) ))
-#             array.append(row)
-#         return np.matrix(array)
 
 def test_states():
     epsilon = 10**-7

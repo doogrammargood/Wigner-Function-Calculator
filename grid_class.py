@@ -81,6 +81,13 @@ class grid_element(object_modified):
             return -sum([p*math.log2(p) for p in marginal])
         else:
             return 1/(1-a)*math.log2(sum([p**a for p in marginal]))
+
+    def total_entropy(self,a):
+        total = 0
+        for line in point_of_plane.origin(self.p,self.n).gen_lines():
+            total += self.entropy(a, line)
+        return total
+
     def dictionary_state(self):
         #returns a dictionary with its information. For saving.
         dict = {}
@@ -96,7 +103,7 @@ class grid_element(object_modified):
         to_return.p=dict['p']
         to_return.n=dict['n']
         to_return.value = dict['values']
-        to_rreturn.marginals = dict['marginals']
+        to_return.marginals = dict['marginals']
         return to_return
 
 def test_grid():

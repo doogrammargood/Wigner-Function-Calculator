@@ -10,9 +10,10 @@ class MyMainWindow(QMainWindow):
         self.p = 19
         self.n = 1
         #self.density_matrix = super_position_state_negatives(self.p, self.n)
-        self.density_matrix = random_pure_state(self.p,self.n)
+        #self.density_matrix = random_pure_state(self.p,self.n)
+        self.density_matrix = state_from_collapse_to_labyrinth(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
-        self.entropy_value = 1
+        self.entropy_value = 2
         self.clear_data()
     def clear_data(self):
         self.pt1 = point_of_plane(None)
@@ -68,10 +69,12 @@ class MyMainWindow(QMainWindow):
     def set_labels(self):
         tot_neg = self.findChild(QLabel, "tot_neg_label")
         most_neg_pt = self.findChild(QLabel, "most_neg_pt")
-        state_info = self.findChild(QLabel, "label_state_info")
+        #state_info = self.findChild(QLabel, "label_state_info")
+        entropy = self.findChild(QLabel, "entropy_label")
         tot_neg.setText("Total Negativity = " + str(self.grid.total_negativity()))
         most_neg_pt.setText("Most Negative Point = " +str(self.grid.most_neg_pt()))
-        state_info.setText(str(self.density_matrix))
+        #state_info.setText(str(self.density_matrix))
+        entropy.setText("Entropy: " + str(self.grid.total_entropy(self.entropy_value)) )
 
     def change_matrix(self, new_matrix):
         self.density_matrix = new_matrix
