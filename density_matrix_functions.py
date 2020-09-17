@@ -84,6 +84,17 @@ def labyrinth_state(p,n):
     sl = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
     return state_from_sl(sl, 0, p, n)
 
+def mirror_state(p,n):
+    m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
+    mat = finite_matrix.from_finite_field_element(m, new_n = n)
+    esl = mat ** ((p**n-1)/ 2)
+    one = finite_field_element.one(p,n)
+    zero = finite_field_element.zero(p,n)
+    J = finite_matrix([[one, zero],[zero, -one]])
+    anti = finite_sp_matrix(esl*J)._weil_representation_case_2()
+    X = antiunitary_normal_form(anti)
+    return np.matrix(X[1][0]) @ np.matrix(X[1][0]).H
+
 def state_from_sl(sl, index, p, n):
     unitary = unitary_from_sl(sl, p, n)
     assert(is_unitary(unitary))

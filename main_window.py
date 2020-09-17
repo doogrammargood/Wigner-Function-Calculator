@@ -11,7 +11,8 @@ class MyMainWindow(QMainWindow):
         self.n = 1
         #self.density_matrix = super_position_state_negatives(self.p, self.n)
         #self.density_matrix = random_pure_state(self.p,self.n)
-        self.density_matrix = state_from_collapse_to_labyrinth(self.p,self.n)
+        #self.density_matrix = state_from_collapse_to_labyrinth(self.p,self.n)
+        self.density_matrix = mirror_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
         self.entropy_value = 2
         self.clear_data()
@@ -129,7 +130,7 @@ class MyMainWindow(QMainWindow):
             self.change_matrix(matrix)
 
     def handle_click(self,pt):
-        #This function is ugly. N
+        #This function is ugly.
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         if self.pt1.isNone():
             self.pt1 = pt
@@ -223,7 +224,7 @@ class MyMainWindow(QMainWindow):
                 self.pos1.set_decorator('marked')
             else:
                 self.pos1.set_decorator('marked', val = False)
-            pos.set_decorator('marked')
+            #pos.set_decorator('marked')
             entropy = self.grid.entropy(2, line)
             self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal, (self.entropy_value, entropy) )
             self.wig.set_decorators('marked',list(line.gen_points()))

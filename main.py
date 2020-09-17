@@ -85,6 +85,7 @@ class Pos(QWidget):
     def copy_data(self, other):
         self.is_flagged = other.is_flagged
         self.is_marked = other.is_marked
+        self.is_highlighted = other.is_highlighted
         self.value = other.value
         self.pt = other.pt
         self.x = other.x
@@ -156,9 +157,11 @@ class WignerWidget(QWidget):
         for pt in self.decorators[decorator]:
             w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
             w.set_decorator(decorator, val=False)
+            w.update()
         for pt in new_positions:
             w = self.grid.itemAtPosition(int(pt.x), int(pt.y)).widget()
             w.set_decorator(decorator)
+            w.update()
         self.decorators[decorator] = new_positions
 
     def set_flags_sl(self,pt):

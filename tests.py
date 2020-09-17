@@ -8,7 +8,7 @@ finite_matrix.load_dual_basis_matrices()
 class SimpleFiniteSpMatrixClass(unittest.TestCase):
 
     def setUp(self):
-        self.p,self.n = 3,2
+        self.p,self.n = 5,1
         self.one = finite_field_element.one(self.p, self.n)
         self.zero = finite_field_element.zero(self.p, self.n)
         pass
@@ -91,14 +91,30 @@ class SimpleFiniteSpMatrixClass(unittest.TestCase):
     #             num_lines = len(list(functional.list_lines()))
     #             print([p, n, i, q_val, c_val, q_val/c_val, c_max, total_negativity])
     def test_antiunitary_normal_form(self):
-        p,n = self.p,self.n
+        def special_sqrt(omega):
+            x = omega**(.5)
+            if np.imag(x) * np.imag(omega) < 0:
+                x = -x
+            return x
+        p,n = self.p, self.n
         one, zero = self.one, self.zero
         m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
         mat = finite_matrix.from_finite_field_element(m, new_n = n)
         esl = mat ** ((p**n-1)/ 2)
-        print("maide it")
         J = finite_matrix([[one, zero],[zero, -one]])
         anti = finite_sp_matrix(esl*J)._weil_representation_case_2()
-
+        X = antiunitary_normal_form(anti)
+        vectors = reduce(lambda a,b: a+b, [X[key] for key in X.keys()], [])
+        for i in vectors:
+            assert np.allclose(1, np.linalg.norm(i))
+        for i,j in itertools.combinations(vectors,2):
+            assert np.allclose(np.vdot(i,j), 0)
+        for key in X.keys():
+            for e, vect in enumerate(X[key]):
+                conj_key = [k for k in X.keys() if np.allclose(k, np.conj(key))]
+                assert len(conj_key)==1
+                conj_key = conj_key[0]
+                pair_vect = special_sqrt(key)*anti@np.conj(vect)
+                assert np.allclose(X[conj_key][e], pair_vect)
 if __name__ == '__main__':
     unittest.main()
