@@ -15,6 +15,8 @@ class MyMainWindow(QMainWindow):
         self.density_matrix = mirror_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
         self.entropy_value = 2
+        self.transform=finite_sp_matrix.get_element_of_sl_2_from_field_extension(self.p,self.n)
+        self.inv_transform=self.transform.inverse()
         self.clear_data()
     def clear_data(self):
         self.pt1 = point_of_plane(None)
@@ -89,7 +91,8 @@ class MyMainWindow(QMainWindow):
         self.n=n
         self.density_matrix = random_pure_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n)
-        self.flagged_pos = []
+        self.transform=finite_sp_matrix.get_element_of_sl_2_from_field_extension(self.p,self.n)
+        self.inv_transform=self.transform.inverse()
 
         current = self.wig
         layout = current.parent().layout()
@@ -128,6 +131,15 @@ class MyMainWindow(QMainWindow):
         elif e.key()== QtCore.Qt.Key_Y:
             matrix = weil_elementary(-1,-1,self.p) @ self.density_matrix @ weil_elementary(1,1,self.p)
             self.change_matrix(matrix)
+        elif e.key()== QtCore.Qt.Key_Left:
+            self.wig.set_decorators('highlighted', [self.inv_transform*h for h in self.wig.decorators['highlighted']])
+        elif e.key()== QtCore.Qt.Key_Right: #orbits progress by 1
+            self.wig.set_decorators('highlighted', [self.transform*h for h in self.wig.decorators['highlighted']])
+        elif e.key()== QtCore.Qt.Key_Up: #completes orbits
+            self.complete_highlighted_orbits()
+        elif e.key()==QtCore.Qt.Key_Down: #clears orbits
+            self.wig.set_decorators('highlighted', [])
+
 
     def handle_click(self,pt):
         #This function is ugly.
@@ -205,6 +217,14 @@ class MyMainWindow(QMainWindow):
             new_val = previous_prime(new_val)
             self.p_spinbox.setValue(new_val)
             self.p_spinbox_value = new_val
+
+    def complete_highlighted_orbits(self):
+        highlighted = self.wig.decorators['highlighted']
+        new_highlighted = []
+        for h in highlighted:
+            if h not in new_highlighted:
+                new_highlighted.extend(self.transform.orbit(h))
+        self.wig.set_decorators('highlighted', new_highlighted)
 
     def update_views(self,pt,pos):
         #determines what the local view controller should see.
