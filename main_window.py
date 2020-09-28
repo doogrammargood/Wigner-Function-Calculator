@@ -139,6 +139,10 @@ class MyMainWindow(QMainWindow):
             self.complete_highlighted_orbits()
         elif e.key()==QtCore.Qt.Key_Down: #clears orbits
             self.wig.set_decorators('highlighted', [])
+        elif e.key()==QtCore.Qt.Key_X:
+            if not self.line is None:
+                matrix = stabilizer_state_from_line(self.line)
+                self.change_matrix(matrix)
 
 
     def handle_click(self,pt):

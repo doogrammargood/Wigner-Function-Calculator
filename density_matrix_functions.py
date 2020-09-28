@@ -32,7 +32,10 @@ def zero_state(p,n):
     vector = np.array([1.0 if i ==0 else 0 for i in range(p**n)])
     #vector = np.array(weil_elementary(0,1,p)).dot(vector)
     return matrix_from_list(vector)
-
+def one_state(p,n):
+    vector = np.array([1.0 if i ==1 else 0 for i in range(p**n)])
+    #vector = np.array(weil_elementary(0,1,p)).dot(vector)
+    return matrix_from_list(vector)
 def maximally_mixed_state(p,n):
     identity = np.identity(p**n)
     return 1/(p**n) * np.matrix(identity)
@@ -58,12 +61,30 @@ def super_position_state_negatives(p,n):
     mat = np.matrix(total) / np.linalg.norm(total)
     return np.matmul(mat.H,mat)
 
-def stabilizer_state_from_line(l):
-    #TODO: use covariance property to define these faster.
+def stabilizer_state_from_line(l): #Uses clifford covariance to get the stabilizer density matrix associated with an element of SL(2,p^d)
     p=l.coefficients[0].p
     n=l.coefficients[0].n
-    total = sum([phase_pt_general(pt) for pt in l.gen_points()])
-    return total
+    a,b,c = l.coefficients
+    if c.is_zero():
+        if a.is_zero():
+            return zero_state(p,n)
+        else:
+            if not b.is_zero():
+                sl = finite_sp_matrix([[finite_field_element.zero(p,n), -b/a],[a/b, finite_field_element.one(p,n)]])
+            else:
+                return super_position_state(p,n)
+            U = np.matrix(sl.weil_representation())
+            return U.H @ zero_state(p,n) @ U
+    else:
+        a = a/c
+        b = b/c
+        if not a.is_zero():
+            sl = finite_sp_matrix([[finite_field_element.zero(p,n),a],[-a.inverse(), b]])
+        else:
+            sl = finite_sp_matrix([[b.inverse(), finite_field_element.zero(p,n)],[finite_field_element.zero(p,n), b]])
+        sl = sl.transpose()
+        U = np.matrix(sl.weil_representation())
+        return U.H @ one_state(p,n) @ U
 
 def superpositon_of_stabilizers(p,n):
     zero = finite_field_element.zero(p,n)
