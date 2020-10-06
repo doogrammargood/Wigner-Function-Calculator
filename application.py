@@ -14,6 +14,7 @@ finite_matrix.load_dual_basis_matrices()
 class Ui_MainWindow(object):
 
     def setupUi(self, MainWindow):
+        MainWindow.setWindowIcon(QtGui.QIcon('./images/rrg_icons/SVG/Icons_Large_-03.svg'))
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1320, 689)
         MainWindow.setStatusTip("")
@@ -76,7 +77,13 @@ class Ui_MainWindow(object):
         self.tot_neg_label.setObjectName("tot_neg_label")
         self.entropy_label = QtWidgets.QLabel(self.frame)
         self.entropy_label.setObjectName("entropy_label")
+        self.l1_label = QtWidgets.QLabel(self.frame)
+        self.l1_label.setObjectName("l1_label")
+        self.mana_label = QtWidgets.QLabel(self.frame)
+        self.mana_label.setObjectName("mana_label")
         self.verticalLayout.addWidget(self.tot_neg_label)
+        self.verticalLayout.addWidget(self.l1_label)
+        self.verticalLayout.addWidget(self.mana_label)
         self.verticalLayout_2.addLayout(self.verticalLayout)
         self.gridLayout_2.addWidget(self.frame, 1, 1, 1, 1)
         self.tabWidget.addTab(self.tab, "")
@@ -208,6 +215,7 @@ class Ui_MainWindow(object):
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon('./images/rrg_icons/SVG/Icons_Large_-03.svg'))
     #MainWindow = QtWidgets.QMainWindow()
     MainWindow = MyMainWindow()
     ui = Ui_MainWindow()

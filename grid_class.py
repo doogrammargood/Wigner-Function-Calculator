@@ -60,9 +60,16 @@ class grid_element(object_modified):
         #assert self.marginals[str(cached_line)][x] == sum([self.get_value(pt) for pt in line.gen_points()])
         return self.marginals[str(cached_line)][x]
 
-    def total_negativity(self):
+    def total_negativity(self): #the negative of the sum negativity of https://arxiv.org/pdf/1307.7171.pdf
         p,n =self.p, self.n
         return np.sum([ np.sum([ self.values[row][col] if self.values[row][col]<0 else 0 for col in range(p**n)]) for row in range(p**n)])
+
+    def l1_norm(self):
+        return -2*self.total_negativity()+1
+
+    def mana(self):
+        return math.log2(self.l1_norm())
+
     def most_neg_pt(self):
         #returns a point where the value is minimized.
         val = float('inf')

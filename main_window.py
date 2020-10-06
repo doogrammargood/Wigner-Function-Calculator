@@ -7,7 +7,7 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 19
+        self.p = 5
         self.n = 1
         #self.density_matrix = super_position_state_negatives(self.p, self.n)
         #self.density_matrix = random_pure_state(self.p,self.n)
@@ -74,10 +74,15 @@ class MyMainWindow(QMainWindow):
         most_neg_pt = self.findChild(QLabel, "most_neg_pt")
         #state_info = self.findChild(QLabel, "label_state_info")
         entropy = self.findChild(QLabel, "entropy_label")
-        tot_neg.setText("Total Negativity = " + str(self.grid.total_negativity()))
+        l1 = self.findChild(QLabel, "l1_label")
+        mana = self.findChild(QLabel, "mana_label")
+        tot_neg.setText("Sum Negativity = " + str(self.grid.total_negativity()))
         most_neg_pt.setText("Most Negative Point = " +str(self.grid.most_neg_pt()))
-        #state_info.setText(str(self.density_matrix))
-        entropy.setText("Entropy: " + str(self.grid.total_entropy(self.entropy_value)) )
+        norm = self.grid.l1_norm()
+        l1.setText("l1 = " + str(norm))
+        mana.setText("Mana = " + str(math.log2(norm)))
+        #state_info.setText(str(self.density_matrix)) #Too ugly! find a better way to do this.
+        entropy.setText("Entropy = " + str(self.grid.total_entropy(self.entropy_value)) )
 
     def change_matrix(self, new_matrix):
         self.density_matrix = new_matrix
@@ -150,25 +155,31 @@ class MyMainWindow(QMainWindow):
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         if self.pt1.isNone():
             self.pt1 = pt
-            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
+            self.wig.set_decorators('flagged1',[self.pt1])
+            self.wig.set_decorators('flagged2',[self.pt2])
             self.pos1.copy_data(pos)
         elif pt == self.pt1:
             self.pt1 = self.pt2
             self.pt2 = point_of_plane(None)
-            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
+            self.wig.set_decorators('flagged1',[self.pt1])
+            self.wig.set_decorators('flagged2',[self.pt2])
             self.pos1.copy_data(self.pos2)
+            self.pos1.set_decorator('flagged1')
+            self.pos1.set_decorator('flagged2', val = False)
             self.pos2.copy_data(Pos(None))
             self.pos1.set_decorator('marked',val=False)
             self.line = line_of_plane(None)
         elif pt == self.pt2:
             self.pt2 = point_of_plane(None)
-            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
+            self.wig.set_decorators('flagged1',[self.pt1])
+            self.wig.set_decorators('flagged2',[self.pt2])
             self.pos2.copy_data(Pos(None))
             self.pos1.set_decorator('marked',val=False)
             self.line = line_of_plane(None)
         else:
             self.pt2 = pt
-            self.wig.set_decorators('flagged',[self.pt1, self.pt2])
+            self.wig.set_decorators('flagged1',[self.pt1])
+            self.wig.set_decorators('flagged2',[self.pt2])
             self.pos2.copy_data(pos)
             self.pos1.set_decorator('marked')
             self.line = self.pt1.line_to(self.pt2)
@@ -179,9 +190,19 @@ class MyMainWindow(QMainWindow):
         decorated = self.wig.decorators['highlighted']
         if pt not in decorated:
             self.wig.set_decorators('highlighted',decorated+[pt])
+            pos.set_decorator('highlighted')
+            if pt == self.pt1:
+                self.local_view.set_magnified(pos, self.pos2)
+            if pt == self.pt2:
+                self.local_view.set_magnified(self.pos1, pos)
         else:
             self.wig.set_decorators('highlighted',[p for p in decorated if not p == pt])
-        #self.update_views(pt,pos)
+            pos.set_decorator('highlighted',val=False)
+            if pt == self.pt1:
+                self.local_view.set_magnified(pos, self.pos2)
+            if pt == self.pt2:
+                self.local_view.set_magnified(self.pos1, pos)
+        self.magnify_pos(pos)
 
     def handle_hover(self,pt):
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
@@ -230,10 +251,14 @@ class MyMainWindow(QMainWindow):
                 new_highlighted.extend(self.transform.orbit(h))
         self.wig.set_decorators('highlighted', new_highlighted)
 
+    def magnify_pos(self,pos):
+        if self.pt1.isNone():
+            self.local_view.set_magnified(pos, self.pos2)
+        elif self.pt2.isNone():
+            self.local_view.set_magnified(self.pos1, pos)
     def update_views(self,pt,pos):
         #determines what the local view controller should see.
-
-        #self.pt1 = pt
+        #This function is a mess. Prefer to use magnify_pos
         if self.pt1.isNone():
             self.wig.set_decorators('marked',[])
             value1 = self.grid.get_value(pt)
@@ -248,7 +273,7 @@ class MyMainWindow(QMainWindow):
                 self.pos1.set_decorator('marked')
             else:
                 self.pos1.set_decorator('marked', val = False)
-            #pos.set_decorator('marked')
+            pos.set_decorator('marked')
             entropy = self.grid.entropy(2, line)
             self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal, (self.entropy_value, entropy) )
             self.wig.set_decorators('marked',list(line.gen_points()))
@@ -259,16 +284,16 @@ class MyMainWindow(QMainWindow):
             valuel = self.grid.sum_line(line)
             marginal = self.grid.marginalize_grid(line)
             if self.pt1.is_on_line(line):
-                self.pos1.set_decorator('mark')
+                self.pos1.set_decorator('marked')
             else:
-                self.pos1.set_decorator('mark',val = False)
+                self.pos1.set_decorator('marked',val = False)
             if self.pt2.is_on_line(line):
-                self.pos2.set_decorator('mark')
+                self.pos2.set_decorator('marked')
             else:
-                self.pos2.set_decorator('mark',val=False)
+                self.pos2.set_decorator('marked',val=False)
             entropy = self.grid.entropy(self.entropy_value, line)
-            self.local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, line, valuel, marginal, (self.entropy_value, entropy))
             self.wig.set_decorators('marked',list(line.gen_points()))
+            self.local_view.set_values(self.pt1, value1, self.pos1, self.pt2, value2, self.pos2, line, valuel, marginal, (self.entropy_value, entropy))
 
     def save(self,filename):
         file = open(filename, "wb")

@@ -9,7 +9,16 @@ from grid_class import *
 from finite_sp_matrix_class import *
 import math
 import pyqtgraph as pg
-IMG_FLAG = QImage("./images/flag.png")
+IMG_MAZE_LARGE = QImage("./images/rrg_icons/SVG/Icons_Large_-03.svg")
+IMG_SKULL = QImage("./images/rrg_icons/SVG/Icons_Large_-04.svg")
+IMG_WATER = QImage("./images/rrg_icons/SVG/Icons_Large_-05.svg")
+IMG_ARIADNE = QImage("./images/rrg_icons/SVG/Icons_Large_-06.svg")
+IMG_SHIP = QImage("./images/rrg_icons/SVG/Icons_Large_-14.svg")
+IMG_SWORD = QImage("./images/rrg_icons/SVG/Icons_Large_-08.svg")
+IMG_MINOTAUR = QImage("./images/rrg_icons/SVG/Icons_Large_-09.svg")
+IMG_STRING = QImage("./images/rrg_icons/SVG/Icons_Large_-10.svg")
+
+IMG_FLAG = QImage("./images/rrg_icons/SVG/Icons_Large_-14.svg")
 IMG_BOMB = QImage("./images/bomb.png")
 
 def find_color(value, min, max):
@@ -32,7 +41,8 @@ class Pos(QWidget):
     def __init__(self, pt, *args, **kwargs):
         super(QWidget, self).__init__(*args, **kwargs)
 
-        self.is_flagged = False# flagged points are the ones that have been clicked
+        self.is_flagged1 = False
+        self.is_flagged2 = False# flagged points are the ones that have been clicked
         self.is_marked = False# Marked to show when points are on a line.
         self.is_highlighted = False
         self.value = 0 #determines the shading.
@@ -71,19 +81,21 @@ class Pos(QWidget):
         r = event.rect()
         p.fillRect(r, QBrush(inner))
         pen = QPen(outer)
-        if self.is_marked:
-            pen.setWidth(7)
-        else:
-            pen.setWidth(1)
+        pen.setWidth(1)
         p.setPen(pen)
         p.drawRect(r)
-        if self.is_flagged:
-            p.drawPixmap(r, QPixmap(IMG_FLAG))
+        if self.is_marked:
+            p.drawPixmap(r, QPixmap(IMG_STRING))
         if self.is_highlighted:
-            p.drawPixmap(r, QPixmap(IMG_BOMB))
+            p.drawPixmap(r, QPixmap(IMG_SKULL))
+        if self.is_flagged1:
+            p.drawPixmap(r, QPixmap(IMG_ARIADNE))
+        if self.is_flagged2:
+            p.drawPixmap(r, QPixmap(IMG_SWORD))
 
     def copy_data(self, other):
-        self.is_flagged = other.is_flagged
+        self.is_flagged1 = other.is_flagged1
+        self.is_flagged2 = other.is_flagged2
         self.is_marked = other.is_marked
         self.is_highlighted = other.is_highlighted
         self.value = other.value
@@ -94,12 +106,15 @@ class Pos(QWidget):
         self.update()
 
     def set_decorator(self, decorator, val = True):
-        if decorator == 'flagged':
-            self.is_flagged = val
+        if decorator == 'flagged1':
+            self.is_flagged1 = val
+        elif decorator == 'flagged2':
+            self.is_flagged2 = val
         elif decorator == 'marked':
             self.is_marked = val
         elif decorator == 'highlighted':
             self.is_highlighted = val
+        self.update()
 
     def eventFilter(self, object, event):
         if event.type() == QEvent.MouseButtonPress:
@@ -118,7 +133,7 @@ class Pos(QWidget):
 class WignerWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super(QWidget, self).__init__(*args)
-        self.decorators = {'flagged':[], 'marked':[], 'highlighted':[]}
+        self.decorators = {'flagged1':[], 'flagged2':[],'marked':[], 'highlighted':[]}
         #self.b_size=25
         #w = QWidget()
         hb = QHBoxLayout()
@@ -257,6 +272,12 @@ class LocalView(QWidget):
         #self.marginal_display.resize(40,50)
         self.set_labels()
         #self.show()
+
+    def set_magnified(self, pos1, pos2):
+        self.pos1.copy_data(pos1)
+        self.pos2.copy_data(pos2)
+        self.update()
+
     def set_values(self, pt1, value1, pos1, pt2, value2, pos2, line, valuel, marginal, entropy):
         self.pt1 = pt1
         self.value1 = value1
