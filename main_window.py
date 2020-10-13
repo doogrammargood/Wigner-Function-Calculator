@@ -7,7 +7,7 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 5
+        self.p = 13
         self.n = 1
         #self.density_matrix = super_position_state_negatives(self.p, self.n)
         #self.density_matrix = random_pure_state(self.p,self.n)
@@ -190,14 +190,16 @@ class MyMainWindow(QMainWindow):
         decorated = self.wig.decorators['highlighted']
         if pt not in decorated:
             self.wig.set_decorators('highlighted',decorated+[pt])
-            pos.set_decorator('highlighted')
+            pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+            #pos.set_decorator('highlighted')
             if pt == self.pt1:
                 self.local_view.set_magnified(pos, self.pos2)
             if pt == self.pt2:
                 self.local_view.set_magnified(self.pos1, pos)
         else:
             self.wig.set_decorators('highlighted',[p for p in decorated if not p == pt])
-            pos.set_decorator('highlighted',val=False)
+            pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
+            #pos.set_decorator('highlighted',val=False)
             if pt == self.pt1:
                 self.local_view.set_magnified(pos, self.pos2)
             if pt == self.pt2:
@@ -273,7 +275,7 @@ class MyMainWindow(QMainWindow):
                 self.pos1.set_decorator('marked')
             else:
                 self.pos1.set_decorator('marked', val = False)
-            pos.set_decorator('marked')
+            #pos.set_decorator('marked')
             entropy = self.grid.entropy(2, line)
             self.local_view.set_values(self.pt1, value1, self.pos1, pt, value2, pos, line, valuel, marginal, (self.entropy_value, entropy) )
             self.wig.set_decorators('marked',list(line.gen_points()))

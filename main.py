@@ -9,7 +9,7 @@ from grid_class import *
 from finite_sp_matrix_class import *
 import math
 import pyqtgraph as pg
-IMG_MAZE_LARGE = QImage("./images/rrg_icons/SVG/Icons_Large_-03.svg")
+IMG_MAZE = QImage("./images/rrg_icons/SVG/Icons_Large_-03.svg")
 IMG_SKULL = QImage("./images/rrg_icons/SVG/Icons_Large_-04.svg")
 IMG_WATER = QImage("./images/rrg_icons/SVG/Icons_Large_-05.svg")
 IMG_ARIADNE = QImage("./images/rrg_icons/SVG/Icons_Large_-06.svg")
@@ -45,6 +45,7 @@ class Pos(QWidget):
         self.is_flagged2 = False# flagged points are the ones that have been clicked
         self.is_marked = False# Marked to show when points are on a line.
         self.is_highlighted = False
+        self.is_origin = False
         self.value = 0 #determines the shading.
         if pt is None:
             self.dim = 5**2
@@ -88,6 +89,8 @@ class Pos(QWidget):
             p.drawPixmap(r, QPixmap(IMG_STRING))
         if self.is_highlighted:
             p.drawPixmap(r, QPixmap(IMG_SKULL))
+        if self.is_origin:
+            p.drawPixmap(r, QPixmap(IMG_MINOTAUR))
         if self.is_flagged1:
             p.drawPixmap(r, QPixmap(IMG_ARIADNE))
         if self.is_flagged2:
@@ -98,6 +101,7 @@ class Pos(QWidget):
         self.is_flagged2 = other.is_flagged2
         self.is_marked = other.is_marked
         self.is_highlighted = other.is_highlighted
+        self.is_origin = other.is_origin
         self.value = other.value
         self.pt = other.pt
         self.x = other.x
@@ -114,6 +118,8 @@ class Pos(QWidget):
             self.is_marked = val
         elif decorator == 'highlighted':
             self.is_highlighted = val
+        elif decorator == 'origin':
+            self.is_origin = val
         self.update()
 
     def eventFilter(self, object, event):
@@ -133,7 +139,9 @@ class Pos(QWidget):
 class WignerWidget(QWidget):
     def __init__(self, *args, **kwargs):
         super(QWidget, self).__init__(*args)
-        self.decorators = {'flagged1':[], 'flagged2':[],'marked':[], 'highlighted':[]}
+        self.p=kwargs['p']
+        self.n=kwargs['n']
+        self.decorators = {'flagged1':[], 'flagged2':[],'marked':[], 'highlighted':[], 'origin':[]}
         #self.b_size=25
         #w = QWidget()
         hb = QHBoxLayout()
@@ -146,8 +154,7 @@ class WignerWidget(QWidget):
         self.setLayout(vb)
         #w.setLayout(vb)
         #self.setCentralWidget(w)
-        self.p=kwargs['p']
-        self.n=kwargs['n']
+
         if self.p**self.n > 60:
             self.grid.setSpacing(1)
         else:
@@ -155,6 +162,7 @@ class WignerWidget(QWidget):
         self.init_map(self.p,self.n)
 
         grid = kwargs['grid']
+        self.set_decorators('origin',[point_of_plane.origin(self.p,self.n)])
         self.set_values_from_grid(grid)
         #self.show()
 
