@@ -55,7 +55,7 @@ class Pos(QWidget):
         if pt is None:
             self.dim = 5**2
             self.magnify = True
-            self.setFixedSize(QSize(60, 60))
+            self.setFixedSize(QSize(80, 80))
             self.pt = None
             self.x = None
             self.y = None
@@ -66,7 +66,7 @@ class Pos(QWidget):
             self.dim = self.x.p**self.x.n
             self.magnify = False
             if self.dim < 15:
-                self.setFixedSize(QSize(30, 30))
+                self.setFixedSize(QSize(35, 35))
             elif self.dim < 40:
                 self.setFixedSize(QSize(20, 20))
             elif self.dim < 60:
@@ -306,12 +306,12 @@ class LocalView(QWidget):
         self.update()
 
     def set_labels(self):
-        self.label_pt1.setText("point 1 = (" + str(self.pt1) + ")")
-        self.label_value1.setText("Value of pt1 = "+ str(self.value1) )
-        self.label_pt2.setText("point 2 = (" + str(self.pt2) + ")")
-        self.label_value2.setText("Value of pt2 = "+ str(self.value2) )
+        self.label_pt1.setText("pt1 = (" + str(self.pt1) + ")")
+        self.label_value1.setText("W(pt1) = "+ str(self.value1) )
+        self.label_pt2.setText("pt2 = (" + str(self.pt2) + ")")
+        self.label_value2.setText("W(pt2) = "+ str(self.value2) )
         self.label_line.setText("line = " + str(self.line))
-        self.label_valuel.setText("Value of Line = " + str(self.valuel))
+        self.label_valuel.setText("Sum of W over line = " + str(self.valuel))
         if not self.entropy is None:
             self.label_entropy.setText("Renyi "+ str(self.entropy[0]) +" entropy: " + str(self.entropy[1]))
         #self.marginal_display.setText("Hoo")

@@ -7,7 +7,7 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 5
+        self.p = 7
         self.n = 1
 
         self.density_matrix = mirror_state(self.p,self.n)
@@ -112,7 +112,7 @@ class MyMainWindow(QMainWindow):
             self.close()
         elif e.key() == QtCore.Qt.Key_Space:
             #self.change_matrix(state_with_special_order(self.p))
-            self.change_matrix(labyrinth_state(self.p,self.n))
+            self.change_matrix(mirror_state(self.p,self.n))
             #self.change_matrix(None)
         elif e.key() == QtCore.Qt.Key_A:
             print("sum of power")
@@ -143,6 +143,9 @@ class MyMainWindow(QMainWindow):
             self.complete_highlighted_orbits()
         elif e.key()==QtCore.Qt.Key_Down: #clears orbits
             self.wig.set_decorators('highlighted', [])
+
+        elif e.key()==QtCore.Qt.Key_K:
+            self.change_matrix(random_pure_state(self.p,self.n))
         elif e.key()==QtCore.Qt.Key_X:
             if not self.line is None:
                 matrix = stabilizer_state_from_line(self.line)

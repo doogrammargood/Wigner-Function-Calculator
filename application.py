@@ -16,7 +16,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setWindowIcon(QtGui.QIcon('./images/rrg_icons/SVG/Icons_Large_-03.svg'))
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1320, 689)
+        MainWindow.resize(300, 1000)
         MainWindow.setStatusTip("")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
