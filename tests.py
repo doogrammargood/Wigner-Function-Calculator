@@ -1,4 +1,5 @@
 import unittest
+import math
 from unittest.mock import Mock, patch
 from finite_sp_matrix_class import finite_sp_matrix
 from finite_matrix_class import *
@@ -97,6 +98,7 @@ class SimpleFiniteSpMatrixClass(unittest.TestCase):
                 x = -x
             return x
         p,n = self.p, self.n
+        p,n = 5,2
         one, zero = self.one, self.zero
         m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
         mat = finite_matrix.from_finite_field_element(m, new_n = n)
@@ -116,5 +118,73 @@ class SimpleFiniteSpMatrixClass(unittest.TestCase):
                 conj_key = conj_key[0]
                 pair_vect = special_sqrt(key)*anti@np.conj(vect)
                 assert np.allclose(X[conj_key][e], pair_vect)
+
+
+def test_finite_field_to_list():
+    #methods from finite_matrix
+    ffe = finite_field_element([1,2,0,1], 3, 4)
+    new_n = 2
+    returned = finite_field_to_list(ffe, new_n)
+    print(returned[0],returned[1])
+
+    ffe2 = ffe+ffe
+    returned2 = finite_field_to_list(ffe2, new_n)
+    print(returned2[0], returned2[1])
+    print(finite_field_from_list(returned2))
+
+    gge = finite_field_element([1,0,0,1], 3, 4)
+    print(finite_matrix.from_finite_field_element(gge, new_n =2))
+
+def test_matrix_from_ffe():
+    #methods from finite_matrix
+    ffe = finite_field_element([1,2,0,1], 3, 4)
+    gge = finite_field_element([1,0,0,1], 3, 4)
+    print(finite_field_to_list(gge*ffe,new_n =2))
+    for x in finite_field_to_list(gge*ffe,new_n =2):
+        print(x)
+    print("wop")
+    mat_gge = finite_matrix.from_finite_field_element(gge, new_n =2)
+    mat_ffe = finite_matrix.from_finite_field_element(ffe, new_n =2)
+    mat_both = finite_matrix.from_finite_field_element(gge*ffe, new_n =2)
+    M = embedding_matrix(3,4,2)
+    print((mat_gge*mat_ffe).to_prime_field_matrix())
+    print(mat_both.to_prime_field_matrix())
+    print(finite_matrix.from_finite_field_element(gge) * finite_matrix.from_finite_field_element(ffe))
+    assert(mat_gge*mat_ffe).to_prime_field_matrix() == mat_both.to_prime_field_matrix()
+    # ffv = finite_matrix(finite_field_to_list(ffe, new_n = 2))
+    # print(mat_gge)
+    # print(mat*ffv)
+def test_symplectic_from_sl2():
+    #There seem to be two ways to create a symplectic from an element of sl2: EDIT: This is false. just one way.
+    # 1: Turn the elements of the sl2 matrix into prime matrices to create a block 2x2 matrix.
+    # 2: Turn the prime field vectors 2-dim vectors using the correct conway embedding.
+    p_n_pairs = [(3,1), (3,2), (3,3), (5,1), (5,2)]
+    for p, n in p_n_pairs:
+        print(p,n)
+        m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
+        m=m ** (p**n-1)
+        mat = finite_matrix.from_finite_field_element(m)
+        print(mat)
+        # sl_mat = finite_sp_matrix.get_element_of_sl_2_from_field_extension(p,n)
+        # prime_matrix1 = sl_mat.sl_matrix_to_prime_matrix(p,n)
+        J = finite_matrix.symplectic_form(2,p,n).to_prime_field_matrix()
+        #print(J)
+        print (mat.is_symplectic())
+        #print(prime_matrix1)
+        print("--")
+
+        #assert mat1 == mat2
+
+def scrap():
+    d,n,m =3,12,2
+    def lower_bound(d,n,m):
+        return math.log2((d**(2*n)-1)/(d**(2*n-m)+d**n-d**(n-m)-1))
+    print(lower_bound(d,n,m))
+    print(math.log2(d**(m)+1)-1)
+
 if __name__ == '__main__':
-    unittest.main()
+    #test_finite_field_to_list()
+    #test_matrix_from_ffe()
+    #test_symplectic_from_sl2()
+    scrap()
+    #unittest.main()

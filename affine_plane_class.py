@@ -63,7 +63,7 @@ class point_of_plane(object_modified):
 
     @classmethod
     def from_string(cls, string,p,n):
-        if string == 'None':
+        if string[0] == 'N':
             return point_of_plane(None)
         coords = string.split("], ")
         x = eval(coords[0] + "]")
@@ -118,6 +118,16 @@ class line_of_plane(object_modified):
     def __str__(self):
         a,b,c = self.coefficients
         return str(a) + str(b) + str(c)
+    @classmethod
+    def from_string(cls,string,p,n):
+        str_coefficients = string.split(']')[:-1]
+        str_coefficients = [s + ']' for s in str_coefficients]
+        coefficients = [ finite_field_element(eval(s), p,n) for s in str_coefficients]
+        if string[0]=='N':
+            return line_of_plane(None)
+        else:
+            str1, str2, str3 = str_coefficients
+            return line_of_plane(coefficients)
 
     def gen_points(self):
         #returns a generator for the points on the line

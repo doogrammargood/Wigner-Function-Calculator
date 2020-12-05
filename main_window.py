@@ -7,11 +7,9 @@ from density_matrix_functions import *
 class MyMainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(QMainWindow, self).__init__(*args, **kwargs)
-        self.p = 13
+        self.p = 5
         self.n = 1
-        #self.density_matrix = super_position_state_negatives(self.p, self.n)
-        #self.density_matrix = random_pure_state(self.p,self.n)
-        #self.density_matrix = state_from_collapse_to_labyrinth(self.p,self.n)
+
         self.density_matrix = mirror_state(self.p,self.n)
         self.grid = grid_element(self.density_matrix, self.p, self.n) #this is potentially confusing: grid is not a layout.
         self.entropy_value = 2
@@ -117,9 +115,10 @@ class MyMainWindow(QMainWindow):
             self.change_matrix(labyrinth_state(self.p,self.n))
             #self.change_matrix(None)
         elif e.key() == QtCore.Qt.Key_A:
-            #mat = cat_state(self.p,self.n)
-            mat = super_position_state_negatives(self.p, self.n)
-            self.change_matrix(mat)
+            print("sum of power")
+            print(self.grid.sum_of_power(1))
+            print(self.grid.sum_of_power(2))
+            print(self.grid.sum_of_power(3))
         elif e.key() == QtCore.Qt.Key_S:
             self.save("test_file.wig")
         elif e.key() == QtCore.Qt.Key_L:
@@ -209,6 +208,7 @@ class MyMainWindow(QMainWindow):
     def handle_hover(self,pt):
         pos = self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()
         self.update_views(pt,pos)
+        self.magnify_pos(pos)
 
     def handle_change_size(self):
         self.change_size(self.p_spinbox.value(),self.n_spinbox.value())
@@ -305,12 +305,19 @@ class MyMainWindow(QMainWindow):
         file = open(filename, "rb")
         dict = pickle.load(file)
         self.update_from_dict(dict)
+        self.magnify_pos(self.pt1)
         self.update()
 
     def dictionary_state(self):
         #produces a dictionary which represents the state of the program.
         dict = {'p': self.p, 'n': self.n, 'density_matrix': self.density_matrix,
-                'pt1': str(self.pt1), 'pt2': str(self.pt2), 'grid': self.grid.dictionary_state()}
+                'pt1': str(self.pt1), 'pt2': str(self.pt2), 'grid': self.grid.dictionary_state(),
+                'line': str(self.line),
+                'entropy_value': self.entropy_value,
+                'transform': self.transform,
+                'inv_transform': self.inv_transform,
+                'decorators': {k:[str(pt) for pt in self.wig.decorators[k]] for k in self.wig.decorators.keys()}
+                }
         return dict
 
     def update_from_dict(self,dict):
@@ -322,18 +329,19 @@ class MyMainWindow(QMainWindow):
         self.grid = grid_element(self.density_matrix,self.p,self.n)
         self.pt1 = point_of_plane.from_string( dict['pt1'], self.p, self.n)
         self.pt2 = point_of_plane.from_string( dict['pt2'], self.p, self.n)
-        pos1 = self.get_pos(self.pt1)
-        pos1.flag()
-        self.pos1.flag()
-        self.pos1.copy_data(pos1)
-        pos2 = self.get_pos(self.pt2)
-        pos2.flag()
-        self.pos2.copy_data(pos2)
-        self.pos2.flag()
-
+        self.pos1.copy_data(self.get_pos(self.pt1))
+        self.pos2.copy_data(self.get_pos(self.pt2))
+        self.line = line_of_plane.from_string(dict['line'], self.p, self.n)
+        self.entropy_value = dict['entropy_value']
+        self.transform = dict['transform']
+        self.inv_transform = dict['inv_transform']
+        self.local_view.set_magnified(self.pos1, self.pos2)
+        self.connect_signals(reconnect_wig=True)
+        for key in dict['decorators'].keys():
+            self.wig.set_decorators(key, [point_of_plane.from_string(str_pt, self.p, self.n) for str_pt in dict['decorators'][key]])
 
     def get_pos(self,pt):
         if pt.isNone():
             return Pos(None)
         else:
-            return self.wig.grid.itemAtPosition(int(x),int(y)).widget()
+            return self.wig.grid.itemAtPosition(int(pt.x),int(pt.y)).widget()

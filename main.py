@@ -13,14 +13,19 @@ IMG_MAZE = QImage("./images/rrg_icons/SVG/Icons_Large_-03.svg")
 IMG_SKULL = QImage("./images/rrg_icons/SVG/Icons_Large_-04.svg")
 IMG_WATER = QImage("./images/rrg_icons/SVG/Icons_Large_-05.svg")
 IMG_ARIADNE = QImage("./images/rrg_icons/SVG/Icons_Large_-06.svg")
-IMG_SHIP = QImage("./images/rrg_icons/SVG/Icons_Large_-14.svg")
+IMG_SHIP = QImage("./images/rrg_icons/SVG/Icons_Large_-07.svg")
 IMG_SWORD = QImage("./images/rrg_icons/SVG/Icons_Large_-08.svg")
 IMG_MINOTAUR = QImage("./images/rrg_icons/SVG/Icons_Large_-09.svg")
 IMG_STRING = QImage("./images/rrg_icons/SVG/Icons_Large_-10.svg")
 
-IMG_FLAG = QImage("./images/rrg_icons/SVG/Icons_Large_-14.svg")
-IMG_BOMB = QImage("./images/bomb.png")
-
+IMG_MAZE_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-11.svg")
+IMG_SKULL_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-12.svg")
+IMG_WATER_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-13.svg")
+IMG_ARIADNE_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-14.svg")
+IMG_STRING_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-15.svg")
+IMG_MINOTAUR_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-16.svg")
+IMG_SWORD_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-17.svg")
+IMG_SHIP_SMALL = QImage("./images/rrg_icons/SVG/Icons_Small_-18.svg")
 def find_color(value, min, max):
     epsilon = 0.001
     assert value <= max + epsilon and value >= min - epsilon

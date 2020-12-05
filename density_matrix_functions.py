@@ -106,6 +106,7 @@ def labyrinth_state(p,n):
     return state_from_sl(sl, 0, p, n)
 
 def mirror_state(p,n):
+    #These will give the same distribution for every striation if d==3 mod 4.
     m = finite_field_element([1 if i == 1 else 0 for i in range(2*n)], p, 2*n)
     mat = finite_matrix.from_finite_field_element(m, new_n = n)
     esl = mat ** ((p**n-1)/ 2)

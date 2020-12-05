@@ -193,7 +193,6 @@ class finite_matrix(object):
         return finite_matrix([ [finite_matrix.from_finite_field_element(self.elements[i][j]) for j in range(len(self.elements[0]))] for i in range(len(self.elements))])
         #return M * finite_matrix([ [finite_matrix.from_finite_field_element(self.elements[i][j]) for j in range(len(self.elements[0]))] for i in range(len(self.elements))]) * M.inverse()
 
-
     def character(self):
         #from https://arxiv.org/pdf/1906.07230.pdf
         #assert len(self.elements)==len(self.elements[0])==1
@@ -202,6 +201,7 @@ class finite_matrix(object):
         #assert lamb.n == 1
         p = lamb.p
         return np.e**(1j*2*np.pi*int(lamb.trace())/p)
+
     @classmethod
     def identity(cls,size,p,n):
         return finite_matrix( [[ finite_field_element.one(p,n) if c ==r else finite_field_element.zero(p,n) for c in range(size)]for r in range(size)] )
@@ -232,7 +232,6 @@ class finite_matrix(object):
             M = finite_matrix(vects)
             return M.transpose()
         else:
-
             M = embedding_matrix(p,n,new_n)
             assert n %new_n == 0
             d = n//new_n
@@ -242,8 +241,6 @@ class finite_matrix(object):
             #idk row and col look switched in the line below, but it seems to work.
             return finite_matrix([[output_basis_elements[col][row] for col in range(d)] for row in range(d)])
 
-
-
     @classmethod
     def list_square_matrices(cls, m,p,n):
         for elements in itertools.product(finite_field_element.list_elements(p,n), repeat = m**2):
@@ -251,7 +248,6 @@ class finite_matrix(object):
 
     @classmethod
     def list_invertible_matrices(cls, m,p,n):
-
         #Uses partial Guassian Elimination as suggested here: https://stackoverflow.com/questions/62766721/how-to-list-all-invertible-matrices-over-a-finite-field/62767443#62767443
 
         current_elements = []
@@ -274,16 +270,12 @@ class finite_matrix(object):
                     if current_index==m:
                         current_index = m-1
                         yield finite_matrix(current_elements)
-
-
             else:
                 list_of_row_iterators[current_index] = itertools.chain(itertools.product(finite_field_element.list_elements(p,n), repeat = m), [None])
                 temp_elements = [c for e,c in enumerate(current_elements) if (e != current_index) and (e != current_index-1)]
                 current_index = current_index - 1
                 if current_index == -1:
                     completed = True
-
-
 
 
     @classmethod
@@ -421,39 +413,7 @@ def finite_field_from_list(list_of_ffe):
     list_of_primes = col_vec.transpose().elements[0]
     return finite_field_element.from_vector(list_of_primes)
 
-
-def test_finite_field_to_list():
-    ffe = finite_field_element([1,2,0,1], 3, 4)
-    new_n = 2
-    returned = finite_field_to_list(ffe, new_n)
-    print(returned[0],returned[1])
-
-    ffe2 = ffe+ffe
-    returned2 = finite_field_to_list(ffe2, new_n)
-    print(returned2[0], returned2[1])
-    print(finite_field_from_list(returned2))
-
-    gge = finite_field_element([1,0,0,1], 3, 4)
-    print(finite_matrix.from_finite_field_element(gge, new_n =2))
-
 #test_finite_field_to_list()
-def test_matrix_from_ffe():
-    ffe = finite_field_element([1,2,0,1], 3, 4)
-    gge = finite_field_element([1,0,0,1], 3, 4)
-    print(finite_field_to_list(gge*ffe,new_n =2))
-    for x in finite_field_to_list(gge*ffe,new_n =2):
-        print(x)
-    print("wop")
-    mat_gge = finite_matrix.from_finite_field_element(gge, new_n =2)
-    mat_ffe = finite_matrix.from_finite_field_element(ffe, new_n =2)
-    mat_both = finite_matrix.from_finite_field_element(gge*ffe, new_n =2)
-    M = embedding_matrix(3,4,2)
-    print((mat_gge*mat_ffe).to_prime_field_matrix())
-    print(mat_both.to_prime_field_matrix())
-    print(finite_matrix.from_finite_field_element(gge) * finite_matrix.from_finite_field_element(ffe))
-    # ffv = finite_matrix(finite_field_to_list(ffe, new_n = 2))
-    # print(mat_gge)
-    # print(mat*ffv)
 #test_matrix_from_ffe()
 # one = finite_field_element.one(5,2)
 # zero = finite_field_element.zero(5,2)

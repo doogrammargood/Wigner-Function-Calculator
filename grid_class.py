@@ -64,6 +64,10 @@ class grid_element(object_modified):
         p,n =self.p, self.n
         return np.sum([ np.sum([ self.values[row][col] if self.values[row][col]<0 else 0 for col in range(p**n)]) for row in range(p**n)])
 
+    def sum_of_power(self,exp):
+        p,n =self.p, self.n
+        return np.sum([ [self.values[row][col]**exp for col in range(p**n)] for row in range(p**n)])
+
     def l1_norm(self):
         return -2*self.total_negativity()+1
 

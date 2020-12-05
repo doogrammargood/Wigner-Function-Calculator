@@ -27,6 +27,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setObjectName("tabWidget")
         self.tab = QtWidgets.QWidget()
         self.tab.setObjectName("tab")
+
         self.gridLayout_2 = QtWidgets.QGridLayout(self.tab)
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_2.setObjectName("gridLayout_2")
@@ -35,19 +36,18 @@ class Ui_MainWindow(object):
         self.wigner_grid_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.wigner_grid_frame.setObjectName("wigner_grid_frame")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.wigner_grid_frame)
-        #self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(-1, -1, 491, 581))
+
 
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_3.setObjectName("verticalLayout_3")
-        #self.widget = QtWidgets.QWidget(self.verticalLayoutWidget_2)
         self.widget = WignerWidget(self.verticalLayoutWidget_2,p=MainWindow.p, n=MainWindow.n, grid = MainWindow.grid)
 
         self.widget.setObjectName("wignerWidget")
         self.verticalLayout_3.addWidget(self.widget)
         self.verticalLayoutWidget_2.raise_()
-        self.gridLayout_2.addWidget(self.wigner_grid_frame, 0, 0, 2, 1)
+        self.gridLayout_2.addWidget(self.wigner_grid_frame, 0, 0, 1, 1)
         self.local_view_frame = QtWidgets.QFrame(self.tab)
         self.local_view_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.local_view_frame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -59,7 +59,7 @@ class Ui_MainWindow(object):
 
         #self.gridLayout_2.addWidget(self.local_view_widget)
         self.local_view_widget.setObjectName("local_view_widget")
-        self.gridLayout_2.addWidget(self.local_view_frame, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.local_view_frame, 1, 0, 1, 1)
         self.frame = QtWidgets.QFrame(self.tab)
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -85,7 +85,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.l1_label)
         self.verticalLayout.addWidget(self.mana_label)
         self.verticalLayout_2.addLayout(self.verticalLayout)
-        self.gridLayout_2.addWidget(self.frame, 1, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.frame, 2, 0, 1, 1)
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")

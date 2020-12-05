@@ -62,6 +62,7 @@ class finite_sp_matrix(finite_matrix):
     def transpose(self):
         return finite_sp_matrix(super().transpose())
     def inverse(self):
+        #Simplification is possible. Something like inv = -J*self.T*J
         return finite_sp_matrix(super().inverse())
 
     def orbit(self, other):
