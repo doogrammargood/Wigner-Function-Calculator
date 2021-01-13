@@ -123,18 +123,28 @@ class MyMainWindow(QMainWindow):
             self.save("test_file.wig")
         elif e.key() == QtCore.Qt.Key_L:
             self.load("test_file.wig")
-        elif e.key() == QtCore.Qt.Key_U:
-            tab = self.findChild(QTabWidget,"tabWidget")
-            tab.setCurrentIndex(1)
         elif e.key() == QtCore.Qt.Key_O:
             tab = self.findChild(QTabWidget,"tabWidget")
             tab.setCurrentIndex(0)
+
         elif e.key()== QtCore.Qt.Key_P:
             matrix = weil_elementary(-1,0,self.p) @ self.density_matrix @ weil_elementary(1,0,self.p)
             self.change_matrix(matrix)
-        elif e.key()== QtCore.Qt.Key_Y:
-            matrix = weil_elementary(-1,-1,self.p) @ self.density_matrix @ weil_elementary(1,1,self.p)
+        elif e.key() == QtCore.Qt.Key_U:
+            matrix = weil_elementary(1,0,self.p) @ self.density_matrix @ weil_elementary(-1,0,self.p)
             self.change_matrix(matrix)
+        elif e.key() == QtCore.Qt.Key_E:
+            matrix = weil_elementary(0,-1,self.p) @ self.density_matrix @ weil_elementary(0,1,self.p)
+            self.change_matrix(matrix)
+        elif e.key() == QtCore.Qt.Key_I:
+            matrix = weil_elementary(0,1,self.p) @ self.density_matrix @ weil_elementary(0,-1,self.p)
+            self.change_matrix(matrix)
+
+        elif e.key()== QtCore.Qt.Key_Y:
+            U = unitary_from_sl(self.transform, self.p, self.n)
+            matrix = U.H @ self.density_matrix @ U
+            self.change_matrix(matrix)
+
         elif e.key()== QtCore.Qt.Key_Left:
             self.wig.set_decorators('highlighted', [self.inv_transform*h for h in self.wig.decorators['highlighted']])
         elif e.key()== QtCore.Qt.Key_Right: #orbits progress by 1

@@ -55,7 +55,7 @@ class Pos(QWidget):
         if pt is None:
             self.dim = 5**2
             self.magnify = True
-            self.setFixedSize(QSize(80, 80))
+            self.setFixedSize(QSize(50, 50))
             self.pt = None
             self.x = None
             self.y = None
@@ -66,7 +66,7 @@ class Pos(QWidget):
             self.dim = self.x.p**self.x.n
             self.magnify = False
             if self.dim < 15:
-                self.setFixedSize(QSize(35, 35))
+                self.setFixedSize(QSize(30, 30))
             elif self.dim < 40:
                 self.setFixedSize(QSize(20, 20))
             elif self.dim < 60:
@@ -254,7 +254,7 @@ class LocalView(QWidget):
         self.marginal_display.setSizePolicy( size_policy )
         #print(self.marginal_display.sizePolicy)
         #setHorizontalPolicy(QSizePolicy.Expanding)
-        self.marginal_display.setFixedHeight(100)
+        self.marginal_display.setFixedHeight(75)
         self.marginal_display.setFixedWidth(500)
         #self.marginal_display.adjustSize()
         h1 = QHBoxLayout()
@@ -327,6 +327,7 @@ class LocalView(QWidget):
         y1 = self.marginal
         self.marginal_display.setMouseEnabled(x=True, y=False)
         self.marginal_display.setYRange(0, max(y1))
+        self.marginal_display.setXRange(0, dim-1)
         c=self.line.coefficients[2]
         self.marginal_display.addItem(pg.BarGraphItem(x=x, height=y1, width=0.6, brushes=['b' if i != int(c) else 'y' for i in range(dim)]))
 
