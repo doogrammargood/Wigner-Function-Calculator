@@ -1,0 +1,47 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Wigner Function Calculator
+message: >-
+  This software was written to visualize the Wigner function
+  of David Gross.
+type: software
+authors:
+  - given-names: Victor
+    family-names: Bankston
+    email: doogrammargood@gmail.com
+    name-particle: Leon
+    affiliation: Tulane University
+    orcid: 'https://orcid.org/0000-0003-4439-3590'
+abstract: >-
+  This software was written to illustrate the Wigner
+  function of David Gross, as described in "Hudson's Theorem
+  for finite-dimensional systems."
+
+
+  We implemented this for single particles of each prime and
+  prime-powered dimension. We also implemented the Clifford
+  Covariance property, which describes the interconversion
+  between Clifford unitary operators acting on the state by
+  convolution and symplectic transformation followed by
+  translation.
+
+
+  The software presents a grid of phase-space, colored
+  according to the value of the Wigner function. The user
+  can click to investigate various phase-space points and
+  lines. Once a line is selected, a histogram of the
+  probabilities appears, and by sweeping across the various
+  lines in the same striation (that are all parallel), you
+  can see the correspondence between the lines in the
+  striation and the outcomes in the histogram.
+
+
+  The main thing that's missing is that we don't have the
+  Clifford covariance for multiple particles. Some of the
+  interfaces could be improved
+keywords:
+  - 'Wigner function, Visualization, Calculator'
+license: MIT
+version: '0.8'
